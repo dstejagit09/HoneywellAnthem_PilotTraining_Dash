@@ -1,70 +1,86 @@
-# Honeywell Anthem Cockpit — Pilot Training Solution
+# Honeywell Anthem Cockpit — Pilot Training Prototype
 
-A training system design for bringing pilots to proficiency on Honeywell's next-generation Anthem flight deck — a clean-sheet, cloud-native, touch-first cockpit architecture that represents the first major avionics platform shift in over two decades.
+A browser-based functional prototype that replicates Honeywell Anthem's touch-first cockpit interface, combining AI-driven ATC voice communication with decision-making drills to accelerate pilot proficiency on the next-generation flight deck.
+
+## What It Does
+
+- **Touch-first cockpit interface** — Flight plan editing, frequency tuning, mode selection, and PilotPredict interaction via touch
+- **AI-generated ATC voice communication** — Claude API generates contextual ATC instructions; ElevenLabs provides realistic voice; pilots respond via push-to-talk
+- **Real-time voice assessment** — Deepgram Nova-2 streaming STT with word-level timestamps measures readback accuracy, response latency, and phraseology adherence
+- **Decision drills** — Timed scenario-based decisions (traffic conflicts, weather diversions, PilotPredict traps) mapped to ICAO CBTA competencies
+- **Competency dashboard** — Radar chart visualization of six CBTA competencies (COM, WLM, SAW, KNO, PSD, FPM) with drill history
 
 ## Problem
 
-The EPIC-to-Anthem transition is not incremental. It is an architectural generation change: touch interfaces replace physical knobs and buttons, AI-driven features (PilotPredict) anticipate pilot inputs, customizable display layouts replace fixed arrangements, and always-on cloud connectivity redefines cockpit workflows. Historical data shows 73% of pilots have inadvertently selected wrong automation modes, and insufficient crew knowledge of automated systems contributed to over one-third of accidents and serious incidents. Existing FAA training frameworks (Part 60, Part 142, FSB processes) have no provisions for AI-driven or adaptive training technologies.
+The EPIC-to-Anthem transition is not incremental — it is an architectural generation change: touch interfaces replace physical knobs and buttons, AI-driven features (PilotPredict) anticipate pilot inputs, customizable display layouts replace fixed arrangements, and always-on cloud connectivity redefines cockpit workflows. 73% of pilots have inadvertently selected wrong automation modes, and insufficient crew knowledge of automated systems contributed to over one-third of accidents and serious incidents. Dedicated avionics-only transition training is poorly standardized.
 
 ## Approach
 
-This project used a **multi-agent adversarial debate** (three Claude Code agents) to stress-test ideas from complementary angles and converge on the strongest possible training solution:
+This project was designed through a **multi-agent adversarial debate** (three Claude Code agents) that stress-tested regulatory, infrastructure, and assessment perspectives to produce an integrated training solution. The prototype implements the key concepts from that synthesis.
 
-| Agent | Role | Input |
-|-------|------|-------|
-| **Advocate A** | Regulatory & Infrastructure Strategist | Report A only |
-| **Advocate B** | Assessment & Measurement Architect | Report B only |
-| **Judge** | Evaluator & Synthesizer | Both reports |
-
-Three rounds of structured debate — opening arguments, cross-examination, and refined positions — were scored on relevance to Anthem, friction reduction, path to proficiency, regulatory viability, and evidence quality. The Judge produced the final synthesis from the strongest elements of both positions.
+See [`Final_Synthesis.md`](Final_Synthesis.md) for the complete training solution design.
 
 ## Repository Structure
 
 ```
 .
+├── CLAUDE.md              # Project development instructions
+├── ARCHITECTURE.md        # Full technical architecture
 ├── README.md              # This file
-├── CLAUDE.md              # Agent debate protocol and project instructions (see note below)
-├── Report_A.md            # FAA frameworks, industry practices, and AI frontier in avionics training
-├── Report_B.md            # Automated pilot evaluation through AI-driven ATC voice analysis
-└── Final_Synthesis.md     # Final deliverable — integrated training solution
+├── Report_A.md            # Research: FAA frameworks, industry practices, AI frontier
+├── Report_B.md            # Research: AI-driven ATC voice analysis for pilot evaluation
+├── Final_Synthesis.md     # Integrated training solution from multi-agent debate
+│
+└── app/                   # Prototype application
+    ├── server/            # Express API proxy (Claude, ElevenLabs, Deepgram)
+    └── src/               # React + TypeScript frontend
+        ├── components/    # Cockpit panels, voice, drills, assessment
+        ├── services/      # ATC engine, voice recognition/synthesis, assessment
+        ├── stores/        # Zustand state stores
+        ├── data/          # Drill definitions, flight plans, phraseology
+        └── types/         # TypeScript type definitions
 ```
 
-## Solution Summary
+## Tech Stack
 
-The final synthesis recommends a **three-layer training architecture**:
+| Layer | Technology |
+|-------|-----------|
+| UI | React 18 + TypeScript + Vite 6 |
+| Styling | Tailwind CSS 4 + CSS variables (Anthem dark theme) |
+| State | Zustand |
+| Voice STT | Deepgram Nova-2 (streaming WebSocket) |
+| Voice TTS | ElevenLabs (Web SpeechSynthesis fallback) |
+| LLM | Claude API |
+| Charts | Recharts |
+| API proxy | Express |
 
-1. **Deterministic Simulation Foundation** (Part 60 compliant) — Validated aircraft performance model stays reproducible and testable against flight data
-2. **Adaptive Scenario Engine** (SFAR-authorized) — Training scenarios adapt based on real-time AI assessment of pilot performance, authorized via a regulatory sandbox modeled on SFAR No. 58 (the mechanism that introduced AQP)
-3. **Cloud-Connected Continuous Assessment** (non-credited data pipeline) — Leverages Anthem's native Honeywell Forge connectivity for fleet-wide analytics and longitudinal proficiency tracking
+## Getting Started
 
-Key components include:
+```bash
+cd app
+cp .env.example .env       # Add your API keys
+pnpm install
+pnpm dev                   # Starts frontend (:5173) + API proxy (:3001)
+```
 
-- **Epic 3.0 as a progressive bridge** — Level B/C FSB classification seeds pilot familiarity with touch-first interfaces before full Anthem
-- **Voice-based cognitive load monitoring** — F0 shifts, disfluency rates, and response latency as real-time indicators of paradigm-transition difficulty
-- **CBTA-mapped assessment** — 9 of 10 ICAO Communication Observable Behaviors automated, with cross-mapping to Workload Management, Situational Awareness, Knowledge, and Problem Solving competencies
-- **SFAR regulatory pathway** — Extending AQP-style innovation to Part 91/135 business aviation operators
-- **Absolute instructor authority** — AI serves as decision-support, never as autonomous grader
+### Required API Keys
 
-The full solution with phased implementation (2026–2030+), risk register, friction analysis, and competitive positioning is in [`Final_Synthesis.md`](Final_Synthesis.md).
+| Key | Service | Purpose |
+|-----|---------|---------|
+| `ANTHROPIC_API_KEY` | Anthropic | ATC instruction generation via Claude |
+| `ELEVENLABS_API_KEY` | ElevenLabs | Realistic ATC voice synthesis |
+| `DEEPGRAM_API_KEY` | Deepgram | Streaming speech-to-text with word timestamps |
 
-## Research Foundation
+The app degrades gracefully without keys — TTS falls back to browser speech synthesis, and drills can run without voice features.
 
-- **Report A** covers the FAA regulatory architecture (FSB reports, five-tier differences training, Part 60 FSTD qualification), industry training ecosystem (FlightSafety, CAE, Garmin, Collins, Honeywell), seven regulatory gaps blocking AI-driven training, and the 10-year horizon for AI integration
-- **Report B** covers AI-based voice analysis for pilot assessment (speech recognition at 3–5% WER for controllers, cognitive load biomarkers, CBTA competency mapping), the HAAWAII/ATCO2/MALORCA research pipeline, and barriers to operational deployment
+## Six Starter Drills
 
-## Note on `CLAUDE.md`
-
-The `CLAUDE.md` file currently contains the **multi-agent debate protocol** — agent roles, context isolation rules, scoring rubric, debate structure, and deliverable specification — designed to run the three-agent adversarial debate in the Claude Code environment.
-
-**This file will undergo structural changes.** Now that the debate has concluded and the synthesis is complete, `CLAUDE.md` will be restructured to serve as the project's working instructions file. Future iterations will contain:
-
-- Project rules and conventions
-- Project preview and scope definition
-- Approved commands and workflows
-- Key decisions and constraints agreed upon by the team
-- Development guidelines as the solution moves toward implementation
-
-As the team reviews the synthesis and agrees on a path forward, `CLAUDE.md` will see several modifications to reflect the evolving project state — transitioning from a debate orchestration document to a living project configuration file.
+1. **Descent with Traffic Conflict** — ATC clears descent while TCAS shows traffic. Tests: SAW, PSD, COM
+2. **Weather Diversion** — Destination weather drops below minimums mid-approach. Tests: PSD, COM, WLM
+3. **PilotPredict Wrong Frequency** — PilotPredict suggests wrong ATC frequency during handoff. Tests: SAW, KNO
+4. **Runway Change** — ATC assigns new runway, pilot must update approach. Tests: FPM, COM, WLM
+5. **Holding Pattern Entry** — ATC issues hold, pilot determines entry type. Tests: KNO, FPM, COM
+6. **Comms Handoff** — Frequency change to approach control with readback. Tests: COM, WLM
 
 ## Key Data Points
 
@@ -74,15 +90,12 @@ As the team reviews the synthesis and agrees on a path forward, `CLAUDE.md` will
 | Accidents linked to insufficient automation knowledge | >33% | PARC/CAST (Report A) |
 | Controller speech recognition WER | 3–5% | HAAWAII (Report B) |
 | Pilot speech recognition WER | 8–10% | HAAWAII (Report B) |
-| Human inter-rater reliability (CBTA) | ~0.5 kappa | DLR NOTECHS studies (Report B) |
-| Cognitive load F0 shift | +7–12 Hz | Huttunen et al., 2011 (Report B) |
 | ICAO Communication OBs automatable | 9 of 10 | IATA framework (Report B) |
-| FlightSafety annual training hours | 1.4M | Report A |
-| Bombardier–Honeywell strategic agreement | Up to $17B | December 2024 (Report A) |
+| Cognitive load F0 shift | +7–12 Hz | Huttunen et al. (Report B) |
 
 ## Status
 
-- Debate: Complete (3 rounds, scored)
+- Research & Debate: Complete
 - Final Synthesis: Complete
-- Team Review: Pending
-- Implementation Planning: Not started
+- Architecture: Complete
+- Prototype: In development
