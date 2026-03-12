@@ -5,10 +5,11 @@ A browser-based functional prototype that replicates Honeywell Anthem's touch-fi
 ## What It Does
 
 - **Touch-first cockpit interface** — Flight plan editing, frequency tuning, mode selection, and PilotPredict interaction via touch
-- **AI-generated ATC voice communication** — Claude API generates contextual ATC instructions; ElevenLabs provides realistic voice; pilots respond via push-to-talk
-- **Real-time voice assessment** — Deepgram Nova-2 streaming STT with word-level timestamps measures readback accuracy, response latency, and phraseology adherence
+- **AI-generated ATC voice communication** — Claude API generates contextual ATC instructions; ElevenLabs provides realistic voice via LiveKit; pilots respond via push-to-talk
+- **Real-time voice assessment** — Deepgram Nova-2 STT (via LiveKit agent) with word-level timestamps measures readback accuracy, response latency, and phraseology adherence
+- **Voice biomarker analysis** — Python agent extracts F0, RMS, MFCC, and spectral features via librosa for cognitive load measurement
 - **Decision drills** — Timed scenario-based decisions (traffic conflicts, weather diversions, PilotPredict traps) mapped to ICAO CBTA competencies
-- **Competency dashboard** — Radar chart visualization of six CBTA competencies (COM, WLM, SAW, KNO, PSD, FPM) with drill history
+- **Competency dashboard** — shadcn/ui Charts radar visualization of six CBTA competencies (COM, WLM, SAW, KNO, PSD, FPM) with drill history and cohort comparison
 
 ## Problem
 
@@ -18,27 +19,40 @@ The EPIC-to-Anthem transition is not incremental — it is an architectural gene
 
 This project was designed through a **multi-agent adversarial debate** (three Claude Code agents) that stress-tested regulatory, infrastructure, and assessment perspectives to produce an integrated training solution. The prototype implements the key concepts from that synthesis.
 
-See [`Final_Synthesis.md`](Final_Synthesis.md) for the complete training solution design.
+See [`Final_Synthesis.md`](brain_StormDocuments/Final_Synthesis.md) for the complete training solution design.
 
 ## Repository Structure
 
 ```
 .
-├── CLAUDE.md              # Project development instructions
-├── ARCHITECTURE.md        # Full technical architecture
-├── README.md              # This file
-├── Report_A.md            # Research: FAA frameworks, industry practices, AI frontier
-├── Report_B.md            # Research: AI-driven ATC voice analysis for pilot evaluation
-├── Final_Synthesis.md     # Integrated training solution from multi-agent debate
+├── CLAUDE.md                  # Project development instructions
+├── ARCHITECTURE.md            # Full technical architecture
+├── Metrics_research.md        # Empirical evidence for assessment metrics
+├── brain_StormDocuments/      # Research reports and synthesis
+│   ├── Report_A.md            # FAA frameworks, industry practices, AI frontier
+│   ├── Report_B.md            # AI-driven ATC voice analysis for pilot evaluation
+│   └── Final_Synthesis.md     # Integrated training solution from multi-agent debate
 │
-└── app/                   # Prototype application
-    ├── server/            # Express API proxy (Claude, ElevenLabs, Deepgram)
-    └── src/               # React + TypeScript frontend
-        ├── components/    # Cockpit panels, voice, drills, assessment
-        ├── services/      # ATC engine, voice recognition/synthesis, assessment
-        ├── stores/        # Zustand state stores
-        ├── data/          # Drill definitions, flight plans, phraseology
-        └── types/         # TypeScript type definitions
+├── agent/                     # LiveKit Agent Worker (Python)
+│   ├── worker.py              # Agent entry point + room lifecycle
+│   ├── stt.py                 # Deepgram Nova-2 via LiveKit STT plugin
+│   ├── tts.py                 # ElevenLabs via LiveKit TTS plugin
+│   ├── voice_analysis.py      # F0, RMS, MFCC, spectral (librosa)
+│   ├── assessment.py          # Confidence-weighted scoring
+│   └── prompts/               # ATC controller persona prompt
+│
+├── supabase/                  # Supabase project config
+│   ├── migrations/            # PostgreSQL schema migrations
+│   └── functions/             # Edge Functions (Claude API proxy, LiveKit tokens)
+│
+└── app/                       # Frontend (React + TypeScript)
+    └── src/
+        ├── components/        # Cockpit panels, voice, drills, assessment
+        ├── services/          # ATC engine, LiveKit client, assessment
+        ├── stores/            # Zustand state stores
+        ├── hooks/             # React hooks (useLiveKit, useDrillRunner, etc.)
+        ├── data/              # Drill definitions, flight plans, phraseology
+        └── types/             # TypeScript type definitions
 ```
 
 ## Tech Stack
@@ -48,30 +62,52 @@ See [`Final_Synthesis.md`](Final_Synthesis.md) for the complete training solutio
 | UI | React 18 + TypeScript + Vite 6 |
 | Styling | Tailwind CSS 4 + CSS variables (Anthem dark theme) |
 | State | Zustand |
-| Voice STT | Deepgram Nova-2 (streaming WebSocket) |
-| Voice TTS | ElevenLabs (Web SpeechSynthesis fallback) |
+| Audio infra | LiveKit Cloud + JS SDK (WebRTC) |
+| Agent runtime | LiveKit Agents (Python) |
+| Voice STT | Deepgram Nova-2 (LiveKit plugin) |
+| Voice TTS | ElevenLabs (LiveKit plugin) |
+| Voice analysis | librosa + numpy (Python agent) |
 | LLM | Claude API |
-| Charts | Recharts |
-| API proxy | Express |
+| Charts | shadcn/ui Charts (Recharts) |
+| Backend | Supabase (Postgres + Edge Functions) |
 
 ## Getting Started
 
 ```bash
+# Frontend
 cd app
-cp .env.example .env       # Add your API keys
+cp .env.example .env       # Add Supabase + LiveKit URLs
 pnpm install
-pnpm dev                   # Starts frontend (:5173) + API proxy (:3001)
+
+# Agent
+pip install -r agent/requirements.txt
+
+# Development (3 processes)
+supabase start             # Local Supabase (Postgres + Edge Functions)
+pnpm dev                   # Starts: Vite (:5173) + LiveKit Agent Worker
 ```
 
-### Required API Keys
+### Required Configuration
 
-| Key | Service | Purpose |
-|-----|---------|---------|
+**Client-side** (`app/.env`):
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_SUPABASE_URL` | Supabase project URL |
+| `VITE_SUPABASE_ANON_KEY` | Supabase public anon key (safe for browser) |
+| `VITE_LIVEKIT_URL` | LiveKit Cloud WebSocket URL |
+
+**Server-side** (Supabase Edge Function secrets, set via `supabase secrets set`):
+
+| Secret | Service | Purpose |
+|--------|---------|---------|
 | `ANTHROPIC_API_KEY` | Anthropic | ATC instruction generation via Claude |
 | `ELEVENLABS_API_KEY` | ElevenLabs | Realistic ATC voice synthesis |
 | `DEEPGRAM_API_KEY` | Deepgram | Streaming speech-to-text with word timestamps |
+| `LIVEKIT_API_KEY` | LiveKit | Room token generation |
+| `LIVEKIT_API_SECRET` | LiveKit | Room token signing |
 
-The app degrades gracefully without keys — TTS falls back to browser speech synthesis, and drills can run without voice features.
+The app degrades gracefully without voice keys — TTS falls back to browser speech synthesis, and drills can run without voice features.
 
 ## Six Starter Drills
 
