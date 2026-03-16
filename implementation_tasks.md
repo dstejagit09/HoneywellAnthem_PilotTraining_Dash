@@ -241,13 +241,13 @@
 ## Phase 7: Assessment Engine + Scoring
 **Goal**: Every drill event produces scored results. CBTA competencies aggregate. Instructor override works.
 
-- [ ] **T7.1** Create `app/src/services/assessment-engine.ts` — Parse ASSESSMENT_RESULT messages, compute DrillMetrics, roll up CBTA scores, exponential decay rolling average (0.95^(N-i)), write to assessment-store, trigger saveToServer
-- [ ] **T7.2** Create `app/src/lib/scoring.ts` — computeCBTAFromDrillMetrics, applyExponentialDecay, computeEstimatedWER, determineScoringBasis (confident/uncertain/abstained)
-- [ ] **T7.3** Create `app/src/lib/audio-utils.ts` — Audio level monitoring from LiveKit SDK for PTT visual feedback (no DSP — all in Python agent)
-- [ ] **T7.4** Add instructor override UI to DrillOutcome — amber "Instructor Review Recommended" for uncertain, red "Score Withheld" for abstained
-- [ ] **T7.5** Add `instructor_override_json` column to drill_results table (new migration)
-- [ ] **T7.6** Add `saveInstructorOverride()` to api-client.ts
-- [ ] **T7.7** Wire scenario-runner to assessment-engine — score after each event
+- [x] **T7.1** Create `app/src/services/assessment-engine.ts` — Parse ASSESSMENT_RESULT messages, compute DrillMetrics, roll up CBTA scores, exponential decay rolling average (0.95^(N-i)), write to assessment-store, trigger saveToServer
+- [x] **T7.2** Create `app/src/lib/scoring.ts` — computeCBTAFromDrillMetrics, applyExponentialDecay, computeEstimatedWER, determineScoringBasis (confident/uncertain/abstained)
+- [x] **T7.3** Create `app/src/lib/audio-utils.ts` — Audio level monitoring from LiveKit SDK for PTT visual feedback (no DSP — all in Python agent)
+- [x] **T7.4** Add instructor override UI to DrillOutcome — amber "Instructor Review Recommended" for uncertain, red "Score Withheld" for abstained
+- [x] **T7.5** Add `instructor_override_json` column to drill_results table (new migration)
+- [x] **T7.6** Add `saveInstructorOverride()` to api-client.ts
+- [x] **T7.7** Wire scenario-runner to assessment-engine — score after each event
 - [ ] **T7.8** Verify complete drill produces readback + cognitive load + latency + decision scores
 - [ ] **T7.9** Verify CBTA competency scores update after drill
 - [ ] **T7.10** Verify instructor override saves to Supabase
@@ -323,7 +323,7 @@
 | Phase 4: Supabase Backend | 17 | 17 | Complete |
 | Phase 5: Drill System | 21 | 21 | Complete |
 | Phase 6: Voice Infra | 23 | 14 | In Progress (verification remaining) |
-| Phase 7: Assessment Engine | 12 | 0 | Not Started |
+| Phase 7: Assessment Engine | 12 | 7 | In Progress (verification remaining) |
 | Phase 8: Dashboard | 14 | 0 | Not Started |
 | Phase 9: Integration | 15 | 0 | Not Started |
-| **Total** | **168** | **118** | **Phase 6 In Progress** |
+| **Total** | **168** | **125** | **Phase 7 In Progress** |

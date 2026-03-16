@@ -11,6 +11,10 @@ import {
 } from '@/services/livekit-client';
 import { useVoiceStore } from '@/stores/voice-store';
 import { useScenarioStore } from '@/stores/scenario-store';
+import {
+  processAssessmentResult,
+  processBaselineUpdate,
+} from '@/services/assessment-engine';
 import type { TranscriptEntry, ConfidenceAnnotatedWord } from '@/types';
 import {
   MSG_INTERIM_TRANSCRIPT,
@@ -64,18 +68,15 @@ export function useLiveKit() {
         }
 
         case MSG_ASSESSMENT_RESULT: {
-          // Assessment results are handled by useATCEngine hook
-          // Dispatch a custom event for it
-          window.dispatchEvent(
-            new CustomEvent('atc-assessment', { detail: payload }),
+          processAssessmentResult(
+            payload as unknown as Parameters<typeof processAssessmentResult>[0],
           );
           break;
         }
 
         case MSG_BASELINE_UPDATE: {
-          // Baseline updates dispatched for assessment store consumption
-          window.dispatchEvent(
-            new CustomEvent('baseline-update', { detail: payload }),
+          processBaselineUpdate(
+            payload as unknown as Parameters<typeof processBaselineUpdate>[0],
           );
           break;
         }

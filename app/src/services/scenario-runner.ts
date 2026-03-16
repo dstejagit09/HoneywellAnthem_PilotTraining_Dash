@@ -1,9 +1,11 @@
-// T5.14 — Drill lifecycle manager: startDrill, advanceEvent, recordEventResult, completeDrill
+// T5.14 + T7.7 — Drill lifecycle manager, wired to assessment engine
 
 import { useScenarioStore } from '@/stores/scenario-store';
 import { useCockpitStore } from '@/stores/cockpit-store';
 import { useAssessmentStore } from '@/stores/assessment-store';
-import type { DrillDefinition, EventResult } from '@/types';
+import { useVoiceStore } from '@/stores/voice-store';
+import { finalizeDrillAssessment } from '@/services/assessment-engine';
+import type { DrillDefinition, EventResult, DecisionScore, TrapScore, TouchScore } from '@/types';
 import { allDrills } from '@/data/drills';
 
 export function initializeDrills(): void {
@@ -32,12 +34,68 @@ export function startDrill(drillId: string): void {
   // Initialize assessment metrics
   assessment.initDrillMetrics(drill.id);
 
+  // Clear voice transcripts from previous drill
+  useVoiceStore.getState().clearTranscripts();
+
   // Start the drill
   scenario.startDrill();
 }
 
+/**
+ * Record an event result and push the corresponding score to the assessment store.
+ */
 export function recordEventResult(result: EventResult): void {
-  useScenarioStore.getState().recordEventResult(result);
+  const scenario = useScenarioStore.getState();
+  const assessment = useAssessmentStore.getState();
+
+  scenario.recordEventResult(result);
+
+  // Route to appropriate assessment store recorder
+  const drill = scenario.activeDrill;
+  if (!drill) return;
+
+  const event = drill.events[result.eventIndex];
+  if (!event) return;
+
+  switch (event.type) {
+    case 'decision_point': {
+      const decisionScore: DecisionScore = {
+        correct: result.success,
+        timeToDecision: (result.details.timeToDecision as number) ?? 0,
+        timedOut: (result.details.timedOut as boolean) ?? false,
+        optionSelected: (result.details.optionSelected as string) ?? '',
+      };
+      assessment.recordDecisionScore(decisionScore);
+      break;
+    }
+
+    case 'predict_suggestion': {
+      const trapScore: TrapScore = {
+        detected: result.success,
+        timeToReject: (result.details.timeToReject as number) ?? 0,
+        acceptedWrong: (result.details.acceptedWrong as boolean) ?? false,
+      };
+      assessment.recordTrapScore(trapScore);
+      break;
+    }
+
+    case 'cockpit_action': {
+      const touchScore: TouchScore = {
+        actionCorrect: result.success,
+        timeToComplete: (result.details.timeToComplete as number) ?? 0,
+        timedOut: (result.details.timedOut as boolean) ?? false,
+        actionPerformed: (result.details.actionPerformed as string) ?? '',
+        expectedAction: (result.details.expectedAction as string) ?? '',
+      };
+      assessment.recordTouchScore(touchScore);
+      break;
+    }
+
+    // atc_instruction readback scores come from ASSESSMENT_RESULT data channel message
+    // and are handled by assessment-engine.processAssessmentResult()
+    case 'atc_instruction':
+      break;
+  }
 }
 
 export function advanceEvent(): void {
@@ -46,14 +104,19 @@ export function advanceEvent(): void {
 
 export function completeDrill(): void {
   const scenario = useScenarioStore.getState();
-  const assessment = useAssessmentStore.getState();
 
   scenario.completeDrill();
-  assessment.finalizeDrillMetrics();
+
+  // Compute final scores, CBTA rollup, and persist
+  finalizeDrillAssessment();
+
   // Save to server (async, fire-and-forget)
-  assessment.saveToServer().catch((err: unknown) => {
-    console.warn('[scenario-runner] Failed to save to server:', err);
-  });
+  useAssessmentStore
+    .getState()
+    .saveToServer()
+    .catch((err: unknown) => {
+      console.warn('[scenario-runner] Failed to save to server:', err);
+    });
 }
 
 export function getCurrentDrill(): DrillDefinition | null {

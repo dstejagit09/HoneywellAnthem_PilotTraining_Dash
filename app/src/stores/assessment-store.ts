@@ -5,9 +5,9 @@ import type {
   DrillMetrics,
   DrillResult,
   CBTAScores,
-  CBTACompetency,
   ReadbackScore,
   DecisionScore,
+  TrapScore,
   TouchScore,
   CognitiveLoadBaseline,
   CognitiveLoadScore,
@@ -26,6 +26,7 @@ interface AssessmentStore {
   recordReadbackScore: (score: ReadbackScore) => void;
   recordCognitiveLoadScore: (score: CognitiveLoadScore) => void;
   recordDecisionScore: (score: DecisionScore) => void;
+  recordTrapScore: (score: TrapScore) => void;
   recordTouchScore: (score: TouchScore) => void;
   initDrillMetrics: (drillId: string) => void;
   finalizeDrillMetrics: () => void;
@@ -45,11 +46,6 @@ const defaultCBTA: CBTAScores = {
   PSD: 0,
   FPM: 0,
 };
-
-const CBTA_KEYS: CBTACompetency[] = ['COM', 'WLM', 'SAW', 'KNO', 'PSD', 'FPM'];
-
-// Keep lint happy — keys used in future phases
-void CBTA_KEYS;
 
 const defaultState = {
   currentDrillMetrics: null as DrillMetrics | null,
@@ -117,6 +113,17 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
             ...state.currentDrillMetrics.decisionScores,
             score,
           ],
+        },
+      };
+    }),
+
+  recordTrapScore: (score) =>
+    set((state) => {
+      if (!state.currentDrillMetrics) return state;
+      return {
+        currentDrillMetrics: {
+          ...state.currentDrillMetrics,
+          trapScores: [...state.currentDrillMetrics.trapScores, score],
         },
       };
     }),
