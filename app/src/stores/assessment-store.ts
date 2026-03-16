@@ -1,4 +1,4 @@
-// T1.14 — Assessment store: metrics, CBTA scores, cognitive load baseline
+// T1.14 + T4.12 — Assessment store: wired to Supabase via api-client
 
 import { create } from 'zustand';
 import type {
@@ -12,6 +12,8 @@ import type {
   CognitiveLoadBaseline,
   CognitiveLoadScore,
 } from '@/types';
+import * as api from '@/services/api-client';
+import { isOnline, loadLocalDrillResults, saveLocalDrillResult, loadLocalBaseline, saveLocalBaseline } from '@/lib/storage';
 
 interface AssessmentStore {
   currentDrillMetrics: DrillMetrics | null;
@@ -148,17 +150,78 @@ export const useAssessmentStore = create<AssessmentStore>((set, get) => ({
 
   setActivePilotId: (pilotId) => set({ activePilotId: pilotId }),
 
-  // Stub — wired to Supabase in Phase 4
   loadFromServer: async (pilotId: string) => {
     set({ activePilotId: pilotId });
-    // TODO: fetch from Supabase via api-client (T4.12)
-    void get();
+
+    if (isOnline()) {
+      try {
+        const [history, baseline] = await Promise.all([
+          api.fetchDrillHistory(pilotId),
+          api.fetchBaseline(pilotId),
+        ]);
+
+        // Derive CBTA from most recent drill result
+        const latest = history[history.length - 1];
+        const cbta = latest ? latest.cbta : { ...defaultCBTA };
+
+        set({
+          sessionHistory: history,
+          cbta,
+          cognitiveLoadBaseline: baseline,
+        });
+        return;
+      } catch (err) {
+        console.warn('[assessment-store] Supabase load failed, using local:', err);
+      }
+    }
+
+    // Offline fallback
+    const localHistory = loadLocalDrillResults(pilotId);
+    const localBaseline = loadLocalBaseline(pilotId);
+    const latest = localHistory[localHistory.length - 1];
+    set({
+      sessionHistory: localHistory,
+      cbta: latest ? latest.cbta : { ...defaultCBTA },
+      cognitiveLoadBaseline: localBaseline,
+    });
   },
 
-  // Stub — wired to Supabase in Phase 4
   saveToServer: async () => {
-    // TODO: persist to Supabase via api-client (T4.12)
-    void get();
+    const state = get();
+    if (!state.currentDrillMetrics || !state.activePilotId) return;
+
+    const result: DrillResult = {
+      id: crypto.randomUUID(),
+      pilotId: state.activePilotId,
+      drillId: state.currentDrillMetrics.drillId,
+      metrics: state.currentDrillMetrics,
+      cbta: state.cbta,
+      sessionId: '',
+      timestamp: Date.now(),
+      instructorOverride: null,
+    };
+
+    // Always save locally as fallback
+    saveLocalDrillResult(result);
+
+    if (state.cognitiveLoadBaseline) {
+      saveLocalBaseline(state.cognitiveLoadBaseline);
+    }
+
+    set((s) => ({
+      sessionHistory: [...s.sessionHistory, result],
+    }));
+
+    // Try to persist to server
+    if (isOnline()) {
+      try {
+        if (state.cognitiveLoadBaseline) {
+          await api.saveCognitiveLoadBaseline(state.cognitiveLoadBaseline);
+        }
+      } catch (err) {
+        console.warn('[assessment-store] Supabase save failed:', err);
+      }
+    }
   },
 
   reset: () => set(defaultState),

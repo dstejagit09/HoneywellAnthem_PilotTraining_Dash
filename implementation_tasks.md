@@ -130,31 +130,31 @@
 **Goal**: Database schema, pilot persistence, Edge Functions for Claude API + LiveKit tokens.
 
 ### Database
-- [ ] **T4.1** Create `supabase/migrations/001_initial_schema.sql` — All tables: pilots, sessions, drill_results, readback_scores, cognitive_load_baselines
-- [ ] **T4.2** Add indexes on pilot_id and drill_id
-- [ ] **T4.3** Create PostgreSQL RPC function `population_cbta_baseline()` — Returns P25/P50/P75 for each CBTA competency
-- [ ] **T4.4** Create PostgreSQL RPC function `pilot_percentile_rank()` — Returns pilot's percentile rank within cohort
-- [ ] **T4.5** Create `supabase/seed.sql` — 3-4 sample pilot profiles, 5-10 drill results each for dashboard visualization
+- [x] **T4.1** Create `supabase/migrations/001_initial_schema.sql` — All tables: pilots, sessions, drill_results, readback_scores, cognitive_load_baselines
+- [x] **T4.2** Add indexes on pilot_id and drill_id
+- [x] **T4.3** Create PostgreSQL RPC function `population_cbta_baseline()` — Returns P25/P50/P75 for each CBTA competency
+- [x] **T4.4** Create PostgreSQL RPC function `pilot_percentile_rank()` — Returns pilot's percentile rank within cohort
+- [x] **T4.5** Create `supabase/seed.sql` — 3-4 sample pilot profiles, 5-10 drill results each for dashboard visualization
 
 **Database Commit**: `feat(db): add Supabase schema with tables, indexes, RPC functions, and seed data`
 
 ### Edge Functions
-- [ ] **T4.6** Create `supabase/functions/atc/index.ts` — Claude API proxy, receives scenario context, returns ATC instruction + expected readback, CORS headers
-- [ ] **T4.7** Create `supabase/functions/livekit-token/index.ts` — Generates short-lived LiveKit access tokens, scoped to room
+- [x] **T4.6** Create `supabase/functions/atc/index.ts` — Claude API proxy, receives scenario context, returns ATC instruction + expected readback, CORS headers
+- [x] **T4.7** Create `supabase/functions/livekit-token/index.ts` — Generates short-lived LiveKit access tokens, scoped to room
 
 **Edge Functions Commit**: `feat(edge): add Supabase Edge Functions for Claude API proxy and LiveKit token generation`
 
 ### Frontend Integration
-- [ ] **T4.8** Create `app/src/lib/supabase.ts` — Supabase client init with env vars
-- [ ] **T4.9** Create `app/src/services/api-client.ts` — fetchPilots, createPilot, updatePilot, createSession, endSession, saveDrillResult, fetchDrillHistory, saveReadbackScore, saveCognitiveLoadBaseline, fetchBaseline, fetchPopulationBaseline (RPC), fetchPilotPercentile (RPC)
-- [ ] **T4.10** Create `app/src/lib/storage.ts` — localStorage offline fallback with sync queue
-- [ ] **T4.11** Wire pilot-store to api-client (loadPilots, createPilot)
-- [ ] **T4.12** Wire assessment-store to api-client (loadFromServer, saveToServer)
-- [ ] **T4.13** Verify `supabase start` runs local Postgres
-- [ ] **T4.14** Verify `supabase db reset` applies migration successfully
-- [ ] **T4.15** Verify pilot creation persists across page reload
-- [ ] **T4.16** Verify Edge Function `/atc` returns Claude-generated ATC instruction
-- [ ] **T4.17** Verify Edge Function `/livekit-token` returns valid token
+- [x] **T4.8** Create `app/src/lib/supabase.ts` — Supabase client init with env vars
+- [x] **T4.9** Create `app/src/services/api-client.ts` — fetchPilots, createPilot, updatePilot, createSession, endSession, saveDrillResult, fetchDrillHistory, saveReadbackScore, saveCognitiveLoadBaseline, fetchBaseline, fetchPopulationBaseline (RPC), fetchPilotPercentile (RPC)
+- [x] **T4.10** Create `app/src/lib/storage.ts` — localStorage offline fallback with sync queue
+- [x] **T4.11** Wire pilot-store to api-client (loadPilots, createPilot)
+- [x] **T4.12** Wire assessment-store to api-client (loadFromServer, saveToServer)
+- [x] **T4.13** Verify `supabase start` runs local Postgres
+- [x] **T4.14** Verify `supabase db reset` applies migration successfully
+- [x] **T4.15** Verify pilot creation persists across page reload
+- [x] **T4.16** Verify Edge Function `/atc` returns Claude-generated ATC instruction
+- [x] **T4.17** Verify Edge Function `/livekit-token` returns valid token
 
 **Integration Commit**: `feat(api): wire Supabase client, api-client service, and localStorage fallback`
 
@@ -320,10 +320,10 @@
 | Phase 1: Types + Stores | 18 | 18 | Complete |
 | Phase 2: Shared + Layout | 11 | 11 | Complete |
 | Phase 3: Cockpit Panels | 21 | 21 | Complete |
-| Phase 4: Supabase Backend | 17 | 0 | Not Started |
+| Phase 4: Supabase Backend | 17 | 17 | Complete |
 | Phase 5: Drill System | 21 | 0 | Not Started |
 | Phase 6: Voice Infra | 23 | 0 | Not Started |
 | Phase 7: Assessment Engine | 12 | 0 | Not Started |
 | Phase 8: Dashboard | 14 | 0 | Not Started |
 | Phase 9: Integration | 15 | 0 | Not Started |
-| **Total** | **168** | **66** | **Phase 3 Complete** |
+| **Total** | **168** | **83** | **Phase 4 Complete** |

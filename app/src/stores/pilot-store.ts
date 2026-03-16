@@ -1,7 +1,9 @@
-// T1.15 — Pilot store: active pilot, pilot list
+// T1.15 + T4.11 — Pilot store: wired to Supabase via api-client
 
 import { create } from 'zustand';
 import type { PilotProfile } from '@/types';
+import * as api from '@/services/api-client';
+import { isOnline, loadLocalPilots, saveLocalPilots } from '@/lib/storage';
 
 interface PilotStore {
   activePilot: PilotProfile | null;
@@ -28,8 +30,22 @@ export const usePilotStore = create<PilotStore>((set, get) => ({
     set({ activePilot: pilot });
   },
 
-  // Stub — wired to Supabase in Phase 4
   createPilot: async (profile) => {
+    if (isOnline()) {
+      try {
+        const newPilot = await api.createPilot(profile);
+        set((state) => ({
+          pilots: [...state.pilots, newPilot],
+          activePilot: newPilot,
+        }));
+        saveLocalPilots(get().pilots);
+        return;
+      } catch (err) {
+        console.warn('[pilot-store] Supabase create failed, using local:', err);
+      }
+    }
+
+    // Offline fallback
     const newPilot: PilotProfile = {
       ...profile,
       id: crypto.randomUUID(),
@@ -40,12 +56,24 @@ export const usePilotStore = create<PilotStore>((set, get) => ({
       pilots: [...state.pilots, newPilot],
       activePilot: newPilot,
     }));
-    // TODO: persist to Supabase via api-client (T4.11)
+    saveLocalPilots(get().pilots);
   },
 
-  // Stub — wired to Supabase in Phase 4
   loadPilots: async () => {
-    // TODO: fetch from Supabase via api-client (T4.11)
+    if (isOnline()) {
+      try {
+        const pilots = await api.fetchPilots();
+        set({ pilots });
+        saveLocalPilots(pilots);
+        return;
+      } catch (err) {
+        console.warn('[pilot-store] Supabase fetch failed, using local:', err);
+      }
+    }
+
+    // Offline fallback
+    const localPilots = loadLocalPilots();
+    set({ pilots: localPilots });
   },
 
   reset: () => set(defaultState),
