@@ -47,14 +47,14 @@
 **Types Commit**: `feat(types): add complete TypeScript type system for all domain models`
 
 ### Stores
-- [ ] **T1.11** Create `app/src/stores/cockpit-store.ts` — Aircraft state, frequency management, mode selection, initialize with default flight plan
-- [ ] **T1.12** Create `app/src/stores/scenario-store.ts` — Drill lifecycle (idle/briefing/active/decision/outcome), event sequencing, available drills
-- [ ] **T1.13** Create `app/src/stores/voice-store.ts` — PTT state, transcript history, ATC speaking state, LiveKit connection status, latency timestamps
-- [ ] **T1.14** Create `app/src/stores/assessment-store.ts` — Current drill metrics, session history, CBTA scores, cognitive load baseline, stub loadFromServer/saveToServer
-- [ ] **T1.15** Create `app/src/stores/pilot-store.ts` — Active pilot, pilot list, stub loadPilots/createPilot
-- [ ] **T1.16** Create `app/src/stores/ui-store.ts` — Active tab, active panel, numpad state, numpad target
-- [ ] **T1.17** Verify all types compile under strict mode with zero errors
-- [ ] **T1.18** Verify each store can be instantiated and state read/written correctly
+- [x] **T1.11** Create `app/src/stores/cockpit-store.ts` — Aircraft state, frequency management, mode selection, initialize with default flight plan
+- [x] **T1.12** Create `app/src/stores/scenario-store.ts` — Drill lifecycle (idle/briefing/active/decision/outcome), event sequencing, available drills
+- [x] **T1.13** Create `app/src/stores/voice-store.ts` — PTT state, transcript history, ATC speaking state, LiveKit connection status, latency timestamps
+- [x] **T1.14** Create `app/src/stores/assessment-store.ts` — Current drill metrics, session history, CBTA scores, cognitive load baseline, stub loadFromServer/saveToServer
+- [x] **T1.15** Create `app/src/stores/pilot-store.ts` — Active pilot, pilot list, stub loadPilots/createPilot
+- [x] **T1.16** Create `app/src/stores/ui-store.ts` — Active tab, active panel, numpad state, numpad target
+- [x] **T1.17** Verify all types compile under strict mode with zero errors
+- [x] **T1.18** Verify each store can be instantiated and state read/written correctly
 
 **Stores Commit**: `feat(stores): implement 6 Zustand domain-sliced stores`
 
@@ -317,7 +317,7 @@
 | Phase | Tasks | Complete | Status |
 |-------|-------|----------|--------|
 | Phase 0: Scaffolding | 16 | 16 | Complete |
-| Phase 1: Types + Stores | 18 | 10 | Types Complete |
+| Phase 1: Types + Stores | 18 | 18 | Complete |
 | Phase 2: Shared + Layout | 11 | 0 | Not Started |
 | Phase 3: Cockpit Panels | 21 | 0 | Not Started |
 | Phase 4: Supabase Backend | 17 | 0 | Not Started |
@@ -326,4 +326,4 @@
 | Phase 7: Assessment Engine | 12 | 0 | Not Started |
 | Phase 8: Dashboard | 14 | 0 | Not Started |
 | Phase 9: Integration | 15 | 0 | Not Started |
-| **Total** | **168** | **26** | **Phase 1 Types Complete** |
+| **Total** | **168** | **34** | **Phase 1 Complete** |
