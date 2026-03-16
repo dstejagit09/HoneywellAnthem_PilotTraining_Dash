@@ -164,35 +164,35 @@
 **Goal**: 6 drills defined. Drill runner orchestrates lifecycle. Works without voice (keyboard fallback).
 
 ### Drill Definitions
-- [ ] **T5.1** Create `app/src/data/drills/descent-conflict.ts` — Descent with Traffic Conflict (SAW, PSD, COM)
-- [ ] **T5.2** Create `app/src/data/drills/weather-diversion.ts` — Weather Diversion (PSD, COM, WLM)
-- [ ] **T5.3** Create `app/src/data/drills/predict-wrong-freq.ts` — PilotPredict Wrong Frequency trap (SAW, KNO)
-- [ ] **T5.4** Create `app/src/data/drills/runway-change.ts` — Runway Change (FPM, COM, WLM)
-- [ ] **T5.5** Create `app/src/data/drills/holding-pattern.ts` — Holding Pattern Entry (KNO, FPM, COM)
-- [ ] **T5.6** Create `app/src/data/drills/comms-handoff.ts` — Comms Handoff (COM, WLM)
-- [ ] **T5.7** Create `app/src/data/drills/index.ts` — Barrel file exporting all drills
+- [x] **T5.1** Create `app/src/data/drills/descent-conflict.ts` — Descent with Traffic Conflict (SAW, PSD, COM)
+- [x] **T5.2** Create `app/src/data/drills/weather-diversion.ts` — Weather Diversion (PSD, COM, WLM)
+- [x] **T5.3** Create `app/src/data/drills/predict-wrong-freq.ts` — PilotPredict Wrong Frequency trap (SAW, KNO)
+- [x] **T5.4** Create `app/src/data/drills/runway-change.ts` — Runway Change (FPM, COM, WLM)
+- [x] **T5.5** Create `app/src/data/drills/holding-pattern.ts` — Holding Pattern Entry (KNO, FPM, COM)
+- [x] **T5.6** Create `app/src/data/drills/comms-handoff.ts` — Comms Handoff (COM, WLM)
+- [x] **T5.7** Create `app/src/data/drills/index.ts` — Barrel file exporting all drills
 
 **Drill Definitions Commit**: `feat(drills): define 6 training drills with ATC events, decision points, and PilotPredict traps`
 
 ### Drill Components
-- [ ] **T5.8** Create `app/src/components/drill/DrillSelector.tsx` — Grid of DrillCards, difficulty badges, competency tags
-- [ ] **T5.9** Create `app/src/components/drill/DrillCard.tsx` — Difficulty color, competency chips, title, description
-- [ ] **T5.10** Create `app/src/components/drill/DrillBriefing.tsx` — Full-screen briefing, scenario setup, "Begin Drill" button
-- [ ] **T5.11** Create `app/src/components/drill/DrillTimer.tsx` — Countdown/elapsed timer overlay
-- [ ] **T5.12** Create `app/src/components/drill/DecisionPrompt.tsx` — Modal overlay, 2-4 options as touch buttons, countdown
-- [ ] **T5.13** Create `app/src/components/drill/DrillOutcome.tsx` — Post-drill summary, per-event results, "View Dashboard" / "Try Again"
+- [x] **T5.8** Create `app/src/components/drill/DrillSelector.tsx` — Grid of DrillCards, difficulty badges, competency tags
+- [x] **T5.9** Create `app/src/components/drill/DrillCard.tsx` — Difficulty color, competency chips, title, description
+- [x] **T5.10** Create `app/src/components/drill/DrillBriefing.tsx` — Full-screen briefing, scenario setup, "Begin Drill" button
+- [x] **T5.11** Create `app/src/components/drill/DrillTimer.tsx` — Countdown/elapsed timer overlay
+- [x] **T5.12** Create `app/src/components/drill/DecisionPrompt.tsx` — Modal overlay, 2-4 options as touch buttons, countdown
+- [x] **T5.13** Create `app/src/components/drill/DrillOutcome.tsx` — Post-drill summary, per-event results, "View Dashboard" / "Try Again"
 
 **Drill UI Commit**: `feat(drill-ui): add DrillSelector, DrillCard, DrillBriefing, DecisionPrompt, and DrillOutcome`
 
 ### Services + Hooks
-- [ ] **T5.14** Create `app/src/services/scenario-runner.ts` — startDrill, advanceEvent, recordEventResult, completeDrill
-- [ ] **T5.15** Create `app/src/services/pilot-predict.ts` — Generate correct suggestions + intentionally wrong trap suggestions
-- [ ] **T5.16** Create `app/src/hooks/useDrillRunner.ts` — React hook wrapping scenario-runner
-- [ ] **T5.17** Create `app/src/hooks/useTimer.ts` — Countdown and elapsed timer hook
-- [ ] **T5.18** Verify DrillSelector shows all 6 drills with correct metadata
-- [ ] **T5.19** Verify drill lifecycle: briefing → events → decision point → outcome
-- [ ] **T5.20** Verify PilotPredict trap events show wrong suggestions
-- [ ] **T5.21** Verify entire flow works without voice (keyboard/click fallback)
+- [x] **T5.14** Create `app/src/services/scenario-runner.ts` — startDrill, advanceEvent, recordEventResult, completeDrill
+- [x] **T5.15** Create `app/src/services/pilot-predict.ts` — Generate correct suggestions + intentionally wrong trap suggestions
+- [x] **T5.16** Create `app/src/hooks/useDrillRunner.ts` — React hook wrapping scenario-runner
+- [x] **T5.17** Create `app/src/hooks/useTimer.ts` — Countdown and elapsed timer hook
+- [x] **T5.18** Verify DrillSelector shows all 6 drills with correct metadata
+- [x] **T5.19** Verify drill lifecycle: briefing → events → decision point → outcome
+- [x] **T5.20** Verify PilotPredict trap events show wrong suggestions
+- [x] **T5.21** Verify entire flow works without voice (keyboard/click fallback)
 
 **Drill Services Commit**: `feat(drill-engine): implement scenario runner, PilotPredict service, and drill lifecycle hooks`
 
@@ -321,9 +321,9 @@
 | Phase 2: Shared + Layout | 11 | 11 | Complete |
 | Phase 3: Cockpit Panels | 21 | 21 | Complete |
 | Phase 4: Supabase Backend | 17 | 17 | Complete |
-| Phase 5: Drill System | 21 | 0 | Not Started |
+| Phase 5: Drill System | 21 | 21 | Complete |
 | Phase 6: Voice Infra | 23 | 0 | Not Started |
 | Phase 7: Assessment Engine | 12 | 0 | Not Started |
 | Phase 8: Dashboard | 14 | 0 | Not Started |
 | Phase 9: Integration | 15 | 0 | Not Started |
-| **Total** | **168** | **83** | **Phase 4 Complete** |
+| **Total** | **168** | **104** | **Phase 5 Complete** |
