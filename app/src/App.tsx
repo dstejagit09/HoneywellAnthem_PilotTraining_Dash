@@ -3,21 +3,9 @@
 import { TopNavBar } from '@/components/layout/TopNavBar';
 import { CockpitShell } from '@/components/layout/CockpitShell';
 import { StatusBar } from '@/components/layout/StatusBar';
-import { AnthemCard } from '@/components/shared/AnthemCard';
 import { DrillsTab } from '@/components/drill/DrillsTab';
+import { AssessmentDashboard } from '@/components/assessment/AssessmentDashboard';
 import { useUIStore } from '@/stores/ui-store';
-
-function AssessmentPlaceholder() {
-  return (
-    <div className="flex-1 overflow-auto p-4">
-      <AnthemCard title="Assessment Dashboard">
-        <p className="text-anthem-text-muted text-sm">
-          Assessment dashboard — implemented in Phase 8
-        </p>
-      </AnthemCard>
-    </div>
-  );
-}
 
 export function App() {
   const activeTab = useUIStore((s) => s.activeTab);
@@ -28,7 +16,7 @@ export function App() {
       <main className="flex-1 flex flex-col overflow-hidden">
         {activeTab === 'cockpit' && <CockpitShell />}
         {activeTab === 'drills' && <DrillsTab />}
-        {activeTab === 'assessment' && <AssessmentPlaceholder />}
+        {activeTab === 'assessment' && <AssessmentDashboard />}
       </main>
       <StatusBar />
     </div>

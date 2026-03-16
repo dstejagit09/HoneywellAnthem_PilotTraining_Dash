@@ -261,15 +261,15 @@
 ## Phase 8: Assessment Dashboard
 **Goal**: Rich data visualization — the other half of the demo centerpiece.
 
-- [ ] **T8.1** Create `app/src/components/assessment/AssessmentDashboard.tsx` — Grid layout (radar top-left, KPIs top-right, trends + history bottom, cohort + cognitive load bottom)
-- [ ] **T8.2** Create `app/src/components/assessment/CBTARadar.tsx` — shadcn/ui radar chart, 6 competencies (COM/WLM/SAW/KNO/PSD/FPM) 0-100, pilot cyan, population P25/P75 gray band, hover exact values
-- [ ] **T8.3** Create `app/src/components/assessment/SessionSummary.tsx` — KPI cards: drills completed, avg readback accuracy, avg cognitive load, avg latency, calibration status, estimated avg WER
-- [ ] **T8.4** Create `app/src/components/assessment/DrillHistory.tsx` — Bar chart, per-drill scores segmented (readback/decision/touch), confidence whiskers, latency bars
-- [ ] **T8.5** Create `app/src/components/assessment/TrendChart.tsx` — Line chart, 6 CBTA competencies over time, exponential decay rolling average
-- [ ] **T8.6** Create `app/src/components/assessment/CohortCompare.tsx` — Grouped bar chart, pilot vs P25/P50/P75, filter by accent group/experience level, calls population_cbta_baseline + pilot_percentile_rank RPC
-- [ ] **T8.7** Create `app/src/components/assessment/CognitiveLoadIndicator.tsx` — Timeline (x: events, y: composite load 0-100), biomarker sparklines (F0, disfluency, speech rate), calibration badge, color gradient (green→amber→red)
-- [ ] **T8.8** Create `app/src/components/assessment/ExportButton.tsx` — Export JSON/CSV of drill history + metrics + CBTA + cognitive load
-- [ ] **T8.9** Add concordance rate display — AI-vs-instructor agreement from override data (Strategic Dimension 7)
+- [x] **T8.1** Create `app/src/components/assessment/AssessmentDashboard.tsx` — Grid layout (radar top-left, KPIs top-right, trends + history bottom, cohort + cognitive load bottom)
+- [x] **T8.2** Create `app/src/components/assessment/CBTARadar.tsx` — shadcn/ui radar chart, 6 competencies (COM/WLM/SAW/KNO/PSD/FPM) 0-100, pilot cyan, population P25/P75 gray band, hover exact values
+- [x] **T8.3** Create `app/src/components/assessment/SessionSummary.tsx` — KPI cards: drills completed, avg readback accuracy, avg cognitive load, avg latency, calibration status, estimated avg WER
+- [x] **T8.4** Create `app/src/components/assessment/DrillHistory.tsx` — Bar chart, per-drill scores segmented (readback/decision/touch), confidence whiskers, latency bars
+- [x] **T8.5** Create `app/src/components/assessment/TrendChart.tsx` — Line chart, 6 CBTA competencies over time, exponential decay rolling average
+- [x] **T8.6** Create `app/src/components/assessment/CohortCompare.tsx` — Grouped bar chart, pilot vs P25/P50/P75, filter by accent group/experience level, calls population_cbta_baseline + pilot_percentile_rank RPC
+- [x] **T8.7** Create `app/src/components/assessment/CognitiveLoadIndicator.tsx` — Timeline (x: events, y: composite load 0-100), biomarker sparklines (F0, disfluency, speech rate), calibration badge, color gradient (green→amber→red)
+- [x] **T8.8** Create `app/src/components/assessment/ExportButton.tsx` — Export JSON/CSV of drill history + metrics + CBTA + cognitive load
+- [x] **T8.9** Add concordance rate display — AI-vs-instructor agreement from override data (Strategic Dimension 7)
 - [ ] **T8.10** Verify CBTA radar renders all 6 competencies with correct scale
 - [ ] **T8.11** Verify population overlay shows P25/P75 from seed data
 - [ ] **T8.12** Verify trend lines update after completing a drill
@@ -324,6 +324,6 @@
 | Phase 5: Drill System | 21 | 21 | Complete |
 | Phase 6: Voice Infra | 23 | 14 | In Progress (verification remaining) |
 | Phase 7: Assessment Engine | 12 | 7 | In Progress (verification remaining) |
-| Phase 8: Dashboard | 14 | 0 | Not Started |
+| Phase 8: Dashboard | 14 | 9 | In Progress (verification remaining) |
 | Phase 9: Integration | 15 | 0 | Not Started |
-| **Total** | **168** | **125** | **Phase 7 In Progress** |
+| **Total** | **168** | **134** | **Phase 8 In Progress** |
