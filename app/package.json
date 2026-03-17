@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "concurrently --names frontend,agent --prefix-colors cyan,magenta \"pnpm dev:frontend\" \"pnpm dev:agent\"",
     "dev:frontend": "vite",
-    "dev:agent": "cd ../agent && python -m livekit.agents dev worker.py",
+    "dev:agent": "cd .. && python -m agent.worker dev",
     "build": "tsc --noEmit && vite build",
     "lint": "eslint .",
     "test": "vitest run",
