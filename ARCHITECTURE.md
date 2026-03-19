@@ -127,7 +127,8 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       │   ├── supabase.ts         # Supabase client init
 │       │   ├── scoring.ts          # Simplified (server-side primary)
 │       │   ├── audio-utils.ts      # Simplified (LiveKit SDK handles audio)
-│       │   └── storage.ts          # Offline fallback (localStorage)
+│       │   ├── storage.ts          # Offline fallback (localStorage)
+│       │   └── telemetry-mock.ts   # Anthem telemetry event emitter (console-only prototype)
 │       ├── services/
 │       │   ├── livekit-client.ts   # LiveKit room setup, PTT data channel
 │       │   ├── atc-engine.ts       # Calls Supabase Edge Function instead of Express
@@ -140,7 +141,7 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       │   ├── useATCEngine.ts     # ATC generation + streaming response
 │       │   ├── useDrillRunner.ts   # Drill lifecycle orchestration
 │       │   ├── useTimer.ts         # Countdown / elapsed timer
-│       │   └── usePilotPredict.ts  # Suggestion trigger + accept/reject
+│       │   └── useAudioLevel.ts   # Real-time mic RMS via Web Audio API (ref-based, no re-renders)
 │       ├── components/
 │       │   ├── layout/
 │       │   │   ├── CockpitShell.tsx
@@ -162,12 +163,16 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       │   │   ├── VoicePanel.tsx
 │       │   │   ├── PTTButton.tsx
 │       │   │   ├── TranscriptDisplay.tsx
-│       │   │   └── VoiceStatus.tsx
+│       │   │   ├── VoiceStatus.tsx
+│       │   │   └── VUMeter.tsx          # 16-segment horizontal VU bar (green/amber/red)
 │       │   ├── drill/
 │       │   │   ├── DrillSelector.tsx
 │       │   │   ├── DrillCard.tsx
 │       │   │   ├── DrillBriefing.tsx
 │       │   │   ├── DrillTimer.tsx
+│       │   │   ├── DrillActiveView.tsx   # Core drill execution UI
+│       │   │   ├── DrillsTab.tsx         # Drill tab wrapper
+│       │   │   ├── CalibrationView.tsx  # Pre-drill voice baseline calibration with VU meter
 │       │   │   ├── DecisionPrompt.tsx
 │       │   │   └── DrillOutcome.tsx
 │       │   ├── assessment/           # Dashboard uses shadcn/ui Charts
@@ -177,6 +182,7 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       │   │   ├── TrendChart.tsx     # Line chart (competency over time)
 │       │   │   ├── CohortCompare.tsx  # Grouped bars + percentile
 │       │   │   ├── CognitiveLoadIndicator.tsx
+│       │   │   ├── ConcordanceRate.tsx   # Assessment concordance display
 │       │   │   ├── SessionSummary.tsx # KPI cards (shadcn/ui Card)
 │       │   │   └── ExportButton.tsx
 │       │   └── shared/
@@ -185,6 +191,7 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       │       ├── AnthemInput.tsx
 │       │       └── PilotSelector.tsx
 │       ├── types/
+│       │   ├── index.ts            # Barrel re-export
 │       │   ├── scenario.ts
 │       │   ├── assessment.ts
 │       │   ├── cockpit.ts
@@ -203,6 +210,7 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       │   └── ui-store.ts
 │       └── data/
 │           ├── drills/
+│           │   ├── index.ts              # Barrel re-export of all drills
 │           │   ├── descent-conflict.ts
 │           │   ├── weather-diversion.ts
 │           │   ├── predict-wrong-freq.ts
@@ -250,7 +258,7 @@ deepgram_options = {
     "model": "nova-2",
     "language": "en",
     "smart_format": True,
-    "punctuate": False,          # Aviation comms don't use punctuation
+    "punctuate": True,           # Enabled for better transcript readability
     "interim_results": True,     # Show live transcript as pilot speaks
     "utterance_end_ms": 1500,    # Detect end of utterance for auto-commit
     "channels": 1,
@@ -409,6 +417,10 @@ interface CockpitStore {
   updateWaypoint: (index: number, waypoint: Partial<Waypoint>) => void;
   setMode: (mode: CockpitMode) => void;
   setAltitude: (alt: number) => void;
+  setHeading: (hdg: number) => void;
+  setSpeed: (spd: number) => void;
+  loadFlightPlan: (plan: Waypoint[]) => void;
+  reset: () => void;
 }
 
 // scenario-store.ts — Active drill state
@@ -420,11 +432,13 @@ interface ScenarioStore {
   eventResults: EventResult[];
   startTime: number | null;
   // Actions
+  setAvailableDrills: (drills: DrillDefinition[]) => void;
   selectDrill: (drillId: string) => void;
   startDrill: () => void;
   advanceEvent: () => void;
   recordEventResult: (result: EventResult) => void;
   completeDrill: () => void;
+  reset: () => void;
 }
 
 // voice-store.ts — Voice communication state
@@ -445,6 +459,9 @@ interface VoiceStore {
   commitTranscript: (entry: TranscriptEntry) => void;
   setATCSpeaking: (speaking: boolean) => void;
   setLocalSpeechOnset: (timestamp: number) => void;
+  setLivekitConnected: (connected: boolean) => void;
+  clearTranscripts: () => void;
+  reset: () => void;
 }
 
 // assessment-store.ts — Scoring and metrics
@@ -455,14 +472,21 @@ interface AssessmentStore {
   cognitiveLoadBaseline: CognitiveLoadBaseline | null;
   currentEventCognitiveLoad: CognitiveLoadScore[];
   activePilotId: string | null;
+  activeSessionId: string | null;  // Created on first drill save, reused within session
   // Actions
   recordReadbackScore: (score: ReadbackScore) => void;
   recordCognitiveLoadScore: (score: CognitiveLoadScore) => void;
   recordDecisionScore: (score: DecisionScore) => void;
+  recordTrapScore: (score: TrapScore) => void;
   recordTouchScore: (score: TouchScore) => void;
+  initDrillMetrics: (drillId: string) => void;
   finalizeDrillMetrics: () => void;
+  setCBTA: (scores: CBTAScores) => void;
+  setCognitiveLoadBaseline: (baseline: CognitiveLoadBaseline) => void;
+  setActivePilotId: (pilotId: string | null) => void;
   loadFromServer: (pilotId: string) => Promise<void>;   // Loads from Supabase
   saveToServer: () => Promise<void>;                     // Saves to Supabase
+  reset: () => void;
 }
 
 // pilot-store.ts — Active pilot profile
@@ -748,7 +772,7 @@ interface CognitiveLoadScore {
 
 **Composite load weights:** F0 deviation 0.35, disfluency rate 0.25, F0 range narrowing 0.15, speech rate decrease 0.15, vocal intensity 0.10. Derived from relative evidence strength — see `Metrics_research.md` Section 1.6.
 
-**Calibration:** First 5 utterances → partial (confidence 0.3-0.65). First 10 → calibrated (confidence 0.7-1.0). No special UI. Stored per-pilot in Supabase PostgreSQL.
+**Calibration:** A dedicated pre-drill calibration flow (`CalibrationView.tsx`) runs before the pilot's first drill. The pilot reads 5 standard ATC phrases while a real-time VU meter (`VUMeter.tsx`, driven by `useAudioLevel` hook via Web Audio API `AnalyserNode` RMS) provides visual mic feedback. After 5 phrases → partial baseline (confidence 0.3-0.65). After 10+ utterances (including drill speech) → calibrated (confidence 0.7-1.0). Baseline is stored per-pilot in Supabase PostgreSQL and restored to the Python agent on LiveKit reconnect via the `SET_BASELINE` data channel message (running sums are reconstructed from mean/std values).
 
 ### CBTA Competency Mapping
 
@@ -793,47 +817,51 @@ interface TrapScore {
 Derived from Anthem cockpit visual design — dark background with cyan, green, and magenta accent colors.
 
 ```css
-:root {
+/* Tailwind 4 @theme block — variable names use --color-anthem-* prefix */
+/* In Tailwind utilities: bg-anthem-bg-primary, text-anthem-cyan, etc. */
+@theme {
   /* Background layers */
-  --anthem-bg-primary: #0a0e17;      /* Main cockpit background */
-  --anthem-bg-secondary: #111827;    /* Panel background */
-  --anthem-bg-tertiary: #1a2235;     /* Card/elevated surface */
-  --anthem-bg-input: #0d1321;        /* Input field background */
+  --color-anthem-bg-primary: #0a0e17;      /* Main cockpit background */
+  --color-anthem-bg-secondary: #111827;    /* Panel background */
+  --color-anthem-bg-tertiary: #1a2235;     /* Card/elevated surface */
+  --color-anthem-bg-input: #0d1321;        /* Input field background */
 
   /* Primary accent — Cyan (active elements, selected state) */
-  --anthem-cyan: #00d4ff;
-  --anthem-cyan-dim: #0891b2;
-  --anthem-cyan-glow: rgba(0, 212, 255, 0.15);
+  --color-anthem-cyan: #00d4ff;
+  --color-anthem-cyan-dim: #0891b2;
 
   /* Secondary accent — Green (positive/confirmed state) */
-  --anthem-green: #22c55e;
-  --anthem-green-dim: #16a34a;
+  --color-anthem-green: #22c55e;
+  --color-anthem-green-dim: #16a34a;
 
   /* Tertiary accent — Magenta (warnings, attention) */
-  --anthem-magenta: #e040fb;
-  --anthem-magenta-dim: #ab47bc;
+  --color-anthem-magenta: #e040fb;
+  --color-anthem-magenta-dim: #ab47bc;
 
   /* Alert — Amber (cautions) */
-  --anthem-amber: #f59e0b;
+  --color-anthem-amber: #f59e0b;
 
   /* Alert — Red (warnings) */
-  --anthem-red: #ef4444;
+  --color-anthem-red: #ef4444;
 
   /* Text hierarchy */
-  --anthem-text-primary: #e2e8f0;    /* Primary text */
-  --anthem-text-secondary: #94a3b8;  /* Secondary/label text */
-  --anthem-text-muted: #475569;      /* Disabled/inactive text */
+  --color-anthem-text-primary: #e2e8f0;    /* Primary text */
+  --color-anthem-text-secondary: #94a3b8;  /* Secondary/label text */
+  --color-anthem-text-muted: #475569;      /* Disabled/inactive text */
 
   /* Borders */
-  --anthem-border: #1e293b;
-  --anthem-border-active: #00d4ff;
-
-  /* Touch targets */
-  --anthem-touch-min: 44px;          /* Minimum touch target size */
+  --color-anthem-border: #1e293b;
+  --color-anthem-border-active: #00d4ff;
 
   /* Typography */
-  --anthem-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-  --anthem-font-sans: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+/* Additional non-theme CSS custom properties */
+:root {
+  --anthem-cyan-glow: rgba(0, 212, 255, 0.15);
+  --anthem-touch-min: 44px;          /* Minimum touch target size */
 }
 ```
 
@@ -900,7 +928,7 @@ PostgreSQL via Supabase, managed through migrations (`supabase/migrations/001_in
 
 **Core tables:**
 
-- `pilots` — id, name, accent_group, experience_level, previous_avionics (JSONB), timestamps
+- `pilots` — id, name, accent_group, experience_level, total_hours, anthem_hours, previous_platform, timestamps
 - `sessions` — id, pilot_id (FK), started_at, ended_at, drill_count
 - `drill_results` — id, session_id (FK), pilot_id (FK), drill_id, scores, metrics_json, cbta_scores_json, cognitive_load_json, transcript_confidence, estimated_wer
 - `readback_scores` — id, drill_result_id (FK), pilot_id, event_index, raw_accuracy, confidence_adjusted_accuracy, latency_raw_ms, latency_adjusted_ms, scoring_basis, confidence_words_json
@@ -962,17 +990,19 @@ interface PilotProfile {
   name: string;
   accentGroup: AccentGroup;  // For WER stratification (Report B recommendation)
   experienceLevel: ExperienceLevel;
-  previousAvionics: string[];
-  createdAt: string;
-  lastActiveAt: string;
+  totalHours: number;
+  anthemHours: number;
+  previousPlatform: string;
+  createdAt: number;
+  lastActiveAt: number;
 }
 
 type AccentGroup =
-  | 'native-english-us' | 'native-english-uk' | 'native-english-au'
-  | 'european' | 'south-asian' | 'east-asian' | 'southeast-asian'
-  | 'middle-eastern' | 'latin-american' | 'african' | 'other';
+  | 'native_us' | 'native_uk' | 'native_aus'
+  | 'south_asian' | 'east_asian' | 'european'
+  | 'middle_eastern' | 'latin_american' | 'african' | 'other';
 
-type ExperienceLevel = 'student' | 'low-time' | 'mid-time' | 'high-time' | 'atp';
+type ExperienceLevel = 'student' | 'low_time' | 'mid_time' | 'high_time' | 'atp';
 ```
 
 Selection via `PilotSelector.tsx` in TopNavBar. No auth — trust-based identity (prototype constraint).
@@ -995,6 +1025,8 @@ Selection via `PilotSelector.tsx` in TopNavBar. No auth — trust-based identity
    a. Receives instruction text
    b. Sends to ElevenLabs TTS → audio frames played into room
    c. Browser hears ATC instruction via LiveKit audio track
+   d. ATC_SPEAK_END sent in `finally` block (always fires, even on TTS failure)
+   e. Browser has 30s safety timeout — resets `isATCSpeaking` if ATC_SPEAK_END never arrives
 
 5. Pilot presses PTT → browser sends PTT_START via data channel
 6. Agent Worker:
@@ -1009,11 +1041,27 @@ Selection via `PilotSelector.tsx` in TopNavBar. No auth — trust-based identity
    b. Computes: readback accuracy (confidence-weighted), speech rate, disfluency rate
    c. Computes: cognitive load score (F0 deviation + RMS + spectral vs baseline)
    d. Computes: latency decomposition
-   e. Sends assessment payload to browser via data channel
-   f. Persists to Supabase via REST API (service role key)
+   e. Sends assessment payload to browser via data channel (ASSESSMENT_RESULT)
+   f. Sends cognitive load baseline update via data channel (BASELINE_UPDATE)
+   g. Persists to Supabase via REST API (service role key)
 
 9. Browser receives assessment → updates Zustand stores → renders shadcn/ui Charts
 ```
+
+### Data Channel Message Types
+
+| Message | Direction | Purpose |
+|---------|-----------|---------|
+| `PTT_START` | Browser → Agent | Pilot pressed push-to-talk |
+| `PTT_END` | Browser → Agent | Pilot released push-to-talk |
+| `SET_KEYWORDS` | Browser → Agent | Drill-specific keyword boosting list |
+| `ATC_INSTRUCTION` | Browser → Agent | ATC instruction text for TTS |
+| `INTERIM_TRANSCRIPT` | Agent → Browser | Live partial STT transcript |
+| `FINAL_TRANSCRIPT` | Agent → Browser | Committed STT transcript with confidence |
+| `ATC_SPEAK_END` | Agent → Browser | TTS playback complete, PTT available |
+| `ASSESSMENT_RESULT` | Agent → Browser | Scored readback + cognitive load + latency |
+| `BASELINE_UPDATE` | Agent → Browser | Updated cognitive load baseline after calibration |
+| `SET_BASELINE` | Browser → Agent | Restore persisted baseline on reconnect (running sums reconstructed) |
 
 ### PilotPredict Flow
 
@@ -1097,17 +1145,21 @@ App
 │       ├── VoicePanel
 │       │   ├── TranscriptDisplay
 │       │   ├── PTTButton
-│       │   └── VoiceStatus
+│       │   ├── VoiceStatus
+│       │   └── VUMeter (16-segment bar, ref-driven animation)
 │       └── TouchNumpad (overlay, conditional)
 │
 ├── [tab: drills]
-│   ├── DrillSelector
-│   │   └── DrillCard (×6)
-│   ├── DrillBriefing (when drill selected)
-│   ├── [during active drill — switches to cockpit tab with overlay]
-│   │   ├── DrillTimer
-│   │   └── DecisionPrompt (modal, conditional)
-│   └── DrillOutcome (when drill complete)
+│   └── DrillsTab
+│       ├── CalibrationView (shown before first drill if no baseline)
+│       │   └── VUMeter (real-time mic level, useAudioLevel hook)
+│       ├── DrillSelector
+│       │   └── DrillCard (×6)
+│       ├── DrillBriefing (when drill selected)
+│       ├── DrillActiveView (during active drill)
+│       │   ├── DrillTimer
+│       │   └── DecisionPrompt (modal, conditional)
+│       └── DrillOutcome (when drill complete)
 │
 └── [tab: assessment]
     └── AssessmentDashboard
@@ -1116,6 +1168,7 @@ App
         ├── DrillHistory (bar/line chart with confidence + latency decomposition)
         ├── TrendChart (competency over time)
         ├── CohortCompare (accent group, experience level drill-down)
+        ├── ConcordanceRate (assessment concordance display)
         ├── SessionSummary (KPI cards)
         └── ExportButton (JSON/CSV)
 ```

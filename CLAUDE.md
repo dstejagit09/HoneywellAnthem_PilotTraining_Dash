@@ -4,17 +4,17 @@
 
 ## Context Loading Protocol (MANDATORY)
 
-**Before writing ANY code**, Claude MUST read these files in order to build full context:
+**Before writing ANY code**, Claude MUST read this file to build context:
 
-1. **`ARCHITECTURE.md`** — Read FIRST. Contains system diagrams, data flows, store design, drill schema, CSS theme variables, assessment engine, component hierarchy, and all LiveKit/Supabase/Deepgram/ElevenLabs/Claude API integration details. This is the source of truth for HOW to build.
-2. **`implementation_plan.md`** — Read SECOND. Contains the 10-phase implementation strategy, strategic dimensions for Honeywell Leadership, critical path, and minimum viable demo definition. This is the source of truth for WHAT to build and WHY.
-3. **`implementation_tasks.md`** — Read THIRD. Contains the task checklist with `[ ]`/`[x]` progress tracking. Identify the current phase, find the next unchecked task, and begin work there. This is the source of truth for WHERE we are.
+1. **`knowledge_map.md`** — Read FIRST. Contains a comprehensive catalog of every file in the project, grouped by feature pipeline. Use this to locate files, understand component relationships, integration points, and avoid creating duplicates. This is the primary reference for navigating and modifying the codebase.
 
-**After reading all three**, Claude must:
-- Identify the current phase and next task(s) to implement
-- Confirm understanding of which files to create/modify
-- Reference ARCHITECTURE.md for exact type definitions, CSS variables, store interfaces, and component specs
-- Never guess or improvise when the architecture document specifies exact values
+**After reading**, Claude must:
+- Understand the file landscape before making changes
+- Use the knowledge map to identify which files to read and modify for any given task
+- Read the actual source files (types, stores, components) directly — the code is the source of truth
+- Consult `implementation_plan.md` and `implementation_tasks.md` only if asked about phased implementation or task tracking
+
+**`ARCHITECTURE.md`** — Reference architecture document. Contains system diagrams, data flows, design rationale, and integration details. **Only read when the user explicitly asks to consult it**, or when working on a fundamentally new subsystem not covered by existing code. Do NOT read it by default for routine changes or feature work.
 
 ---
 
@@ -362,49 +362,6 @@ See `ARCHITECTURE.md` for the full technical architecture including system diagr
 - Display estimated WER alongside every readback score for transparency
 - Instructor authority is non-negotiable — AI assessment is decision-support, never autonomous grading
 - See `Metrics_research.md` for empirical backing of every metric and threshold
-
-## Known Issues & Resolutions
-
-### MCP Servers Failing — Two root causes (RESOLVED)
-
-> **Status:** Fixed. Both servers now show as connected in `/mcp`. Kept here as reference if the issue recurs.
-
-**Symptoms:** `fetch · ✗ failed` and `supabase-mcp · ✗ failed` in `/mcp`.
-
-#### Issue 1: `fetch` — `@anthropic-ai/mcp-server-fetch` does not exist on npm
-
-The correct official fetch server is Python-based, published as `mcp-server-fetch` on PyPI.
-Install `uv` (provides `uvx`) via Homebrew: `brew install uv`.
-Then configure `.mcp.json` to use `uvx mcp-server-fetch`.
-
-#### Issue 2: `supabase-mcp` — `mcp-remote` requires Node.js ≥ 20.18.1
-
-The system PATH defaults to Node v18 (nvm), but `mcp-remote@0.1.38` depends on `undici@7`
-which requires Node ≥ 20.18.1. Fix by injecting Node v20 into `PATH` via the `env` field.
-
-**Working `.mcp.json`:**
-
-```json
-{
-  "mcpServers": {
-    "fetch": {
-      "command": "/opt/homebrew/bin/uvx",
-      "args": ["mcp-server-fetch"]
-    },
-    "supabase-mcp": {
-      "command": "npx",
-      "args": ["-y", "mcp-remote", "https://mcp.supabase.com/mcp"],
-      "env": {
-        "PATH": "/Users/ashutoshpranjal/.nvm/versions/node/v20.20.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
-      }
-    }
-  }
-}
-```
-
-`mcp-remote` handles the OAuth authentication flow on first connection (opens a browser window to authenticate with your Supabase account). Run `/doctor` after saving to confirm errors are resolved.
-
----
 
 ## Approved Commands
 
