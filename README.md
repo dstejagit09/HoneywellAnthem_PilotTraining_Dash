@@ -13,7 +13,7 @@ A browser-based functional prototype that replicates Honeywell Anthem's touch-fi
 
 ## Problem
 
-The EPIC-to-Anthem transition is not incremental — it is an architectural generation change: touch interfaces replace physical knobs and buttons, AI-driven features (PilotPredict) anticipate pilot inputs, customizable display layouts replace fixed arrangements, and always-on cloud connectivity redefines cockpit workflows. 73% of pilots have inadvertently selected wrong automation modes, and insufficient crew knowledge of automated systems contributed to over one-third of accidents and serious incidents. Dedicated avionics-only transition training is poorly standardized.
+The EPIC-to-Anthem transition is not incremental — it is an architectural generation change: touch interfaces replace physical knobs and buttons, AI-driven features (PilotPredict) anticipate pilot inputs, customizable display layouts replace fixed arrangements, and always-on cloud connectivity redefines cockpit workflows. 73% of pilots have inadvertently selected wrong automation modes, and insufficient crew knowledge of automated systems contributed to over one-third of accidents and serious incidents. Dedicated avionics only transition training is poorly standardized.
 
 ## Approach
 
