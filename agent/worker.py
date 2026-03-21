@@ -88,6 +88,18 @@ class ATCAgentWorker:
         # Listen for track subscriptions (pilot's mic)
         ctx.room.on("track_subscribed", self._on_track_subscribed)
 
+        # Handle tracks that were already subscribed before this handler was registered.
+        # This happens when the browser joins the room before the agent — the
+        # track_subscribed event fires during ctx.connect(), before start() runs.
+        for participant in ctx.room.remote_participants.values():
+            for pub in participant.track_publications.values():
+                if pub.track and pub.track.kind == rtc.TrackKind.KIND_AUDIO:
+                    logger.info(
+                        "[INIT] Found pre-existing audio track from %s — subscribing",
+                        participant.identity,
+                    )
+                    self._on_track_subscribed(pub.track, pub, participant)
+
         logger.info("[INIT] Agent ready — ATC track published, waiting for participants")
 
     async def _publish_atc_track(self) -> None:
@@ -503,21 +515,27 @@ class ATCAgentWorker:
                 samples_per_channel=len(audio),
             )
 
-            # Use the STT recognize method
-            result = await self._stt.recognize(frame)
+            # Use the STT recognize method — returns a SpeechEvent
+            event = await self._stt.recognize(frame)
 
-            text = result.text if result else ""
+            # SpeechEvent stores results in .alternatives (list[SpeechData])
+            text = ""
             words = []
-            if result and hasattr(result, "words"):
-                words = [
-                    {
-                        "word": w.word,
-                        "confidence": w.confidence,
-                        "start": w.start_time,
-                        "end": w.end_time,
-                    }
-                    for w in result.words
-                ]
+            if event and event.alternatives:
+                best = event.alternatives[0]
+                text = best.text
+                if best.words:
+                    for w in best.words:
+                        # TimedString attrs may be NOT_GIVEN (falsy sentinel)
+                        conf = w.confidence if w.confidence else 0.0
+                        start = w.start_time if w.start_time else 0.0
+                        end = w.end_time if w.end_time else 0.0
+                        words.append({
+                            "word": str(w),
+                            "confidence": conf,
+                            "start": start,
+                            "end": end,
+                        })
 
             return {"text": text, "words": words}
 

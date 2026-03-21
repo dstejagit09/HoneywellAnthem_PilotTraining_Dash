@@ -55,10 +55,16 @@ def create_stt(config: STTConfig | None = None) -> STT:
         len(config.drill_keywords),
     )
 
+    # Deepgram expects keywords as list[tuple[str, float]] — (keyword, boost_intensity)
+    # Default boost of 1.5 gives moderate priority without over-biasing
+    keyword_tuples: list[tuple[str, float]] = [
+        (kw, 1.5) for kw in config.all_keywords
+    ]
+
     return STT(
         model=config.model,
         language=config.language,
-        keywords=config.all_keywords,
+        keywords=keyword_tuples,
         interim_results=config.interim_results,
         smart_format=True,
         punctuate=True,
