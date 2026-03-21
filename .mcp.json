@@ -10,6 +10,13 @@
       "env": {
         "PATH": "/Users/ashutoshpranjal/.nvm/versions/node/v20.20.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
       }
+    },
+    "figma": {
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp", "--figma-api-key", "${FIGMA_API_KEY}", "--stdio"],
+      "env": {
+        "PATH": "/Users/ashutoshpranjal/.nvm/versions/node/v20.20.0/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin"
+      }
     }
   }
 }
