@@ -8,7 +8,7 @@ A browser-based functional prototype that replicates Honeywell Anthem's touch-fi
 - **AI-generated ATC voice communication** — Claude API generates contextual ATC instructions; ElevenLabs provides realistic voice via LiveKit; pilots respond via push-to-talk
 - **Real-time voice assessment** — Deepgram Nova-2 STT (via LiveKit agent) with word-level timestamps measures readback accuracy, response latency, and phraseology adherence
 - **Voice biomarker analysis** — Python agent extracts F0, RMS, MFCC, and spectral features via librosa for cognitive load measurement
-- **Decision drills** — Timed scenario-based decisions (traffic conflicts, weather diversions, PilotPredict traps) mapped to ICAO CBTA competencies
+- **Decision drills** — Timed scenario based decisions (traffic conflicts, weather diversions, PilotPredict traps) mapped to ICAO CBTA competencies
 - **Competency dashboard** — shadcn/ui Charts radar visualization of six CBTA competencies (COM, WLM, SAW, KNO, PSD, FPM) with drill history and cohort comparison
 
 ## Problem
