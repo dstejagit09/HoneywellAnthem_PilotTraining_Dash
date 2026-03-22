@@ -13,7 +13,7 @@ export function DrillOutcome() {
   const eventResults = useScenarioStore((s) => s.eventResults);
   const startTime = useScenarioStore((s) => s.startTime);
   const reset = useScenarioStore((s) => s.reset);
-  const setTab = useUIStore((s) => s.setActiveTab);
+  const setShowAssessment = useUIStore((s) => s.setShowAssessment);
   const metrics = useAssessmentStore((s) => s.currentDrillMetrics);
   const sessionHistory = useAssessmentStore((s) => s.sessionHistory);
 
@@ -254,7 +254,7 @@ export function DrillOutcome() {
             variant="primary"
             className="flex-1"
             onClick={() => {
-              setTab('assessment');
+              setShowAssessment(true);
               reset();
             }}
           >

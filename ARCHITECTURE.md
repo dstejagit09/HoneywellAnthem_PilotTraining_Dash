@@ -126,6 +126,7 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       ├── lib/
 │       │   ├── supabase.ts         # Supabase client init
 │       │   ├── scoring.ts          # Simplified (server-side primary)
+│       │   ├── frequency-utils.ts  # Frequency helpers: action classifier, COM validation, predictive matching
 │       │   ├── audio-utils.ts      # Simplified (LiveKit SDK handles audio)
 │       │   ├── storage.ts          # Offline fallback (localStorage)
 │       │   └── telemetry-mock.ts   # Anthem telemetry event emitter (console-only prototype)
@@ -147,7 +148,7 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       ├── components/
 │       │   ├── layout/
 │       │   │   ├── CockpitShell.tsx
-│       │   │   ├── TopNavBar.tsx
+│       │   │   ├── TopNavBar.tsx          # (Deprecated) Navigation embedded in MFD Home tab
 │       │   │   └── StatusBar.tsx
 │       │   ├── panels/
 │       │   │   ├── FlightPlanPanel.tsx
@@ -156,15 +157,17 @@ A browser-based functional prototype that replicates Anthem's touch-first cockpi
 │       │   │   ├── WaypointEditor.tsx
 │       │   │   └── FrequencyTuner.tsx
 │       │   ├── cockpit/
-│       │   │   ├── AmbientCockpitView.tsx   # Default cockpit tab (no drill tracking)
+│       │   │   ├── AmbientCockpitView.tsx   # Single persistent cockpit view, phase-aware drill overlay, auto-switches Radios tab for ATC and frequency cockpit_action events
 │       │   │   ├── InteractiveCockpitView.tsx  # Drill-tracked: overrides, tracking, composition
 │       │   │   ├── InteractivePFD.tsx   # PFD: synthetic vision, tapes, annunciations
-│       │   │   ├── InteractiveMFD.tsx   # MFD: 6 tabs + Training Metrics
+│       │   │   ├── InteractiveMFD.tsx   # MFD: 6 tabs + InlineFrequencyNumpad + drill lifecycle + inline ATC and frequency cockpit_action handling in Radios tab
 │       │   │   ├── AutopilotControlBar.tsx  # Mode buttons, AP/AUTO toggles
-│       │   │   └── ATCCommunicationOverlay.tsx  # ATC transcript + escalation
+│       │   │   ├── ATCCommunicationOverlay.tsx  # ATC transcript + escalation (used in InteractiveCockpitView only)
+│       │   │   └── ResizeHandle.tsx     # Draggable PFD/MFD split handle (300-600px)
 │       │   ├── controls/
 │       │   │   ├── ModeSelectionBar.tsx
-│       │   │   ├── TouchNumpad.tsx
+│       │   │   ├── TouchNumpad.tsx          # (Legacy) Full-screen modal numpad
+│       │   │   ├── InlineFrequencyNumpad.tsx  # Inline MFD numpad: digit grid, predictive suggestions, SWAP, collapsible
 │       │   │   ├── TouchKeyboard.tsx
 │       │   │   ├── PilotPredict.tsx
 │       │   │   └── PredictSuggestion.tsx
@@ -509,14 +512,19 @@ interface PilotStore {
   loadPilots: () => Promise<void>;
 }
 
-// ui-store.ts — UI state
+// ui-store.ts — UI state (cockpit-first, single-screen)
 interface UIStore {
-  activeTab: 'cockpit' | 'drills' | 'assessment';
+  mfdWidth: number;                // Resizable sidebar width (300-600px, default 420)
+  mfdTab: 'home' | 'radios' | 'flightplan' | 'map' | 'checklists' | 'messages';
+  showAssessment: boolean;         // Assessment overlay visibility
   activePanel: 'flight-plan' | 'radios';
-  numpadOpen: boolean;
+  numpadOpen: boolean;             // Legacy full-screen numpad modal
   numpadTarget: string | null;
+  inlineNumpadCollapsed: boolean;  // Inline MFD frequency numpad collapse state
   // Actions
-  setActiveTab: (tab: string) => void;
+  setMfdWidth: (width: number) => void;
+  setMfdTab: (tab: string) => void;
+  setShowAssessment: (show: boolean) => void;
   setActivePanel: (panel: string) => void;
   openNumpad: (target: string) => void;
   closeNumpad: () => void;
@@ -683,11 +691,11 @@ When a drill contains an `interactive_cockpit` event, the system renders a 2-pan
 ### Component Architecture
 
 ```
-InteractiveCockpitView (top-level container)
+InteractiveCockpitView (top-level container — for interactive_cockpit events only)
 ├── AutopilotControlBar           — FLCH/VNAV/ALT/VS mode buttons + AP/AUTO toggles + altitude display
 ├── InteractivePFD (left, ~70%)   — Synthetic vision, altitude/speed/heading tapes, mode annunciations
-├── InteractiveMFD (right, ~30%)  — 6 tabs (Home, Audio, Flight Plan, Checklists, Synoptics, Messages) + Training Metrics
-└── ATCCommunicationOverlay       — Floating ATC transcript panel with escalation messages
+├── InteractiveMFD (right, resizable 300-600px)  — 6 tabs + InlineFrequencyNumpad + embedded drill lifecycle + inline ATC and frequency cockpit_action handling in Radios tab
+└── ATCCommunicationOverlay       — Floating ATC transcript panel with escalation messages (interactive_cockpit events only)
 ```
 
 ### Data Flow
@@ -1076,7 +1084,7 @@ type AccentGroup =
 type ExperienceLevel = 'student' | 'low_time' | 'mid_time' | 'high_time' | 'atp';
 ```
 
-Selection via `PilotSelector.tsx` in TopNavBar. No auth — trust-based identity (prototype constraint).
+Selection via `PilotSelector.tsx` in MFD Home tab and `StatusBar.tsx`. No auth — trust-based identity (prototype constraint).
 
 ### Population Analytics
 
@@ -1197,34 +1205,30 @@ Server-side persistence (Supabase PostgreSQL via api-client)
 ## Component Hierarchy
 
 ```
-App
-├── TopNavBar (tabs: Cockpit | Drills | Assessment)
-├── StatusBar (clock, active freq, drill status)
+App (single-screen cockpit — no top-level tab routing)
+├── StatusBar (clock, active freq, pilot name, drill status)
 │
-├── [tab: cockpit]
-│   └── AmbientCockpitView (default landing — interactive flight deck)
-│       ├── AutopilotControlBar (FLCH/VNAV/ALT/VS/AP/AUTO + altitude)
-│       ├── InteractivePFD (synthetic vision, altitude/speed/heading tapes)
-│       ├── InteractiveMFD (6 tabs + Training Metrics, ambient mode)
-│       └── ATCCommunicationOverlay (ATC transcripts)
+├── AmbientCockpitView (always visible — phase-aware cockpit, auto-switches Radios tab for ATC and frequency cockpit_action events)
+│   ├── AutopilotControlBar (FLCH/VNAV/ALT/VS/AP/AUTO + altitude)
+│   ├── InteractivePFD (synthetic vision, altitude/speed/heading tapes)
+│   ├── ResizeHandle (draggable PFD/MFD split, 300-600px)
+│   ├── InteractiveMFD (6 tabs + InlineFrequencyNumpad + embedded drill lifecycle)
+│   │   ├── HomeTab
+│   │   │   ├── PilotSelector (moved from former TopNavBar)
+│   │   │   ├── System Status / All Systems Normal
+│   │   │   ├── TrainingSection (drill selection, briefing, HUD, outcome)
+│   │   │   └── Assessment access button
+│   │   ├── RadiosTab (drill-aware: ATC contact flow + frequency cockpit_action instruction panel)
+│   │   └── InlineFrequencyNumpad (bottom panel: digit grid, predictive suggestions, SWAP, collapsible)
+│   ├── DrillEventOverlay (non-ATC, non-frequency drill events: decision, predict, non-frequency cockpit action)
+│   └── [phase: interactive_cockpit] → InteractiveCockpitView
+│       ├── AutopilotControlBar
+│       ├── InteractivePFD
+│       ├── ResizeHandle
+│       ├── InteractiveMFD (6 tabs + InlineFrequencyNumpad)
+│       └── ATCCommunicationOverlay
 │
-├── [tab: drills]
-│   └── DrillsTab
-│       ├── CalibrationView (shown before first drill if no baseline)
-│       │   └── VUMeter (real-time mic level, useAudioLevel hook)
-│       ├── DrillDropdownSelector (dropdown + detail panel + start button)
-│       ├── DrillBriefing (when drill selected)
-│       ├── DrillActiveView (during active drill)
-│       │   ├── DrillTimer
-│       │   ├── DecisionPrompt (modal, conditional)
-│       │   └── InteractiveCockpitView (for interactive_cockpit events)
-│       │       ├── AutopilotControlBar
-│       │       ├── InteractivePFD (synthetic vision, tapes, annunciations)
-│       │       ├── InteractiveMFD (6 tabs + Training Metrics)
-│       │       └── ATCCommunicationOverlay
-│       └── DrillOutcome (when drill complete)
-│
-└── [tab: assessment]
+└── AssessmentOverlay (fullscreen, triggered from Home tab or drill outcome)
     └── AssessmentDashboard
         ├── CBTARadar (shadcn/ui radar chart + population P25/P75 overlay)
         ├── CognitiveLoadIndicator (timeline + sparklines)

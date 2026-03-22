@@ -4,12 +4,13 @@
 import { useEffect, useRef, useMemo, useCallback } from 'react';
 import { useCockpitStore } from '@/stores/cockpit-store';
 import { useAssessmentStore } from '@/stores/assessment-store';
-import { useAltitudeSimulation } from '@/hooks/useAltitudeSimulation';
+import { useUIStore } from '@/stores/ui-store';
 import { useInteractiveCockpitTracker } from '@/hooks/useInteractiveCockpitTracker';
 import { AutopilotControlBar } from './AutopilotControlBar';
 import { InteractivePFD } from './InteractivePFD';
 import { InteractiveMFD } from './InteractiveMFD';
 import { ATCCommunicationOverlay } from './ATCCommunicationOverlay';
+import { ResizeHandle } from './ResizeHandle';
 import type { InteractiveCockpitEvent, InteractiveCockpitScore, CockpitMode, DrillDefinition } from '@/types';
 
 interface InteractiveCockpitViewProps {
@@ -49,8 +50,8 @@ export function InteractiveCockpitView({
     if (o.standbyFrequency) store.setFrequency(o.standbyFrequency, 'standby');
   }, [event.initialCockpitOverrides]);
 
-  // Enable altitude simulation
-  useAltitudeSimulation(true);
+  // Altitude simulation is handled by AmbientCockpitView's useAltitudeSimulation(true)
+  // which remains active even when this component is rendered (hooks run before early returns).
 
   // Stable onComplete callback
   const handleComplete = useCallback(
@@ -86,6 +87,16 @@ export function InteractiveCockpitView({
   const firstModeChange = trackerState.modeChanges[0];
   const responseTimeMs = firstModeChange ? firstModeChange.timeMs : 0;
 
+  const mfdWidth = useUIStore((s) => s.mfdWidth);
+  const setMfdWidth = useUIStore((s) => s.setMfdWidth);
+
+  const handleDrag = useCallback(
+    (deltaX: number) => {
+      setMfdWidth(mfdWidth - deltaX);
+    },
+    [mfdWidth, setMfdWidth],
+  );
+
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-[#0A1828]">
       {/* Top control bar */}
@@ -96,6 +107,9 @@ export function InteractiveCockpitView({
         {/* Primary Flight Display (left) */}
         <InteractivePFD onModeChange={handleModeChange} />
 
+        {/* Resize handle */}
+        <ResizeHandle onDrag={handleDrag} />
+
         {/* Multi-Function Display (right) */}
         <InteractiveMFD
           scenarioStatus={scenarioStatus as 'conflict' | 'resolved'}
@@ -103,6 +117,7 @@ export function InteractiveCockpitView({
           modeSelectionCorrect={modeSelectionCorrect}
           atcCompliance={atcCompliance}
           conditionStatus={trackerState.conditionStatus}
+          width={mfdWidth}
         />
 
         {/* ATC Communication overlay */}

@@ -5,6 +5,7 @@ import { useCockpitStore } from '@/stores/cockpit-store';
 import { useScenarioStore } from '@/stores/scenario-store';
 import { useVoiceStore } from '@/stores/voice-store';
 import { useAssessmentStore } from '@/stores/assessment-store';
+import { usePilotStore } from '@/stores/pilot-store';
 import { isSupabaseConfigured } from '@/lib/supabase';
 
 function useUTCClock() {
@@ -55,6 +56,7 @@ export function StatusBar() {
   const hasSupabase = isSupabaseConfigured();
 
   const activeDrill = useScenarioStore((s) => s.activeDrill);
+  const activePilot = usePilotStore((s) => s.activePilot);
 
   // Calibration status for active drills
   const showCalibration = drillPhase !== 'idle' && baseline;
@@ -73,6 +75,14 @@ export function StatusBar() {
           {activeFrequency.value.toFixed(3)}
         </span>
         <span className="text-anthem-text-muted">{activeFrequency.label}</span>
+        {activePilot && (
+          <>
+            <span className="text-anthem-text-muted">|</span>
+            <span className="font-mono text-anthem-text-secondary">
+              {activePilot.name}
+            </span>
+          </>
+        )}
       </div>
 
       <div className="flex items-center gap-3">

@@ -1,28 +1,26 @@
-// T2.8 — Tab-based routing using ui-store.activeTab
+// Single-screen cockpit application — no top-level tab routing.
+// The cockpit is always visible. Drills are launched from the MFD Home tab.
+// Assessment is accessible as a fullscreen overlay.
 
-import { TopNavBar } from '@/components/layout/TopNavBar';
 import { AmbientCockpitView } from '@/components/cockpit/AmbientCockpitView';
 import { StatusBar } from '@/components/layout/StatusBar';
-import { DrillsTab } from '@/components/drill/DrillsTab';
-import { AssessmentDashboard } from '@/components/assessment/AssessmentDashboard';
+import { AssessmentOverlay } from '@/components/assessment/AssessmentOverlay';
 import { useUIStore } from '@/stores/ui-store';
 import { useLiveKit } from '@/hooks/useLiveKit';
 
 export function App() {
-  const activeTab = useUIStore((s) => s.activeTab);
+  const showAssessment = useUIStore((s) => s.showAssessment);
 
   // Mount LiveKit hook — auto-connects when drill phase becomes 'active'
   useLiveKit();
 
   return (
     <div className="flex flex-col h-screen bg-anthem-bg-primary text-anthem-text-primary font-sans">
-      <TopNavBar />
       <main className="flex-1 flex flex-col overflow-hidden">
-        {activeTab === 'cockpit' && <AmbientCockpitView />}
-        {activeTab === 'drills' && <DrillsTab />}
-        {activeTab === 'assessment' && <AssessmentDashboard />}
+        <AmbientCockpitView />
       </main>
       <StatusBar />
+      {showAssessment && <AssessmentOverlay />}
     </div>
   );
 }

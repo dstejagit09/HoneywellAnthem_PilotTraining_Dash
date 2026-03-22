@@ -57,7 +57,8 @@ Every file in the project, grouped by feature pipeline.
 - `app/src/components/drill/DrillOutcome.tsx` — Post-drill results with competency scores and feedback
 - `app/src/components/drill/DrillTimer.tsx` — Timer for timed decision points
 - `app/src/components/drill/CalibrationView.tsx` — Pre-drill baseline calibration flow with VU meter and 5 ATC phrases
-- `app/src/components/drill/DrillsTab.tsx` — Tab interface for drill selection, calibration gate, and history
+- `app/src/components/drill/DrillEventOverlay.tsx` — Floating overlay for non-ATC drill events (decision, predict, cockpit action), rendered on PFD; ATC events handled inline in MFD Radios tab
+- `app/src/components/drill/DrillsTab.tsx` — (Legacy) Tab interface for drill selection; drill lifecycle now embedded in MFD Home tab
 
 ### Drill Runner
 - `app/src/services/scenario-runner.ts` — Drill lifecycle: init, start, event execution, decision scoring, outcome finalization
@@ -69,6 +70,7 @@ Every file in the project, grouped by feature pipeline.
 
 ### Assessment Logic
 - `app/src/lib/scoring.ts` — CBTA competency scoring (COM/WLM/SAW/KNO/PSD/FPM), confidence-weighted readback accuracy, exponential decay rollup, WER estimation
+- `app/src/lib/frequency-utils.ts` — Frequency helpers: isFrequencyAction classifier, COM range validation, predictive frequency matching, expected-value comparison
 - `app/src/services/assessment-engine.ts` — Parses agent assessment results, computes DrillMetrics, rolls up CBTA with decay, writes to stores
 
 ### Assessment State
@@ -78,6 +80,7 @@ Every file in the project, grouped by feature pipeline.
 
 ## 4. Dashboard (Assessment Charts, Visualization)
 
+- `app/src/components/assessment/AssessmentOverlay.tsx` — Fullscreen overlay wrapping AssessmentDashboard, triggered from Home tab or drill outcome
 - `app/src/components/assessment/AssessmentDashboard.tsx` — Full assessment view: CBTA radar, trends, history, export
 - `app/src/components/assessment/CBTARadar.tsx` — Radar chart for CBTA competency scores (fixed height: 300px)
 - `app/src/components/assessment/CognitiveLoadIndicator.tsx` — Cognitive load timeline with biomarker sparklines (fixed height: 200px)
@@ -100,18 +103,20 @@ Every file in the project, grouped by feature pipeline.
 - `app/src/components/panels/FrequencyTuner.tsx` — (Legacy) Frequency selector with 0.025 MHz stepping and numpad entry
 
 ### Interactive Cockpit (2-Panel Flight Deck)
-- `app/src/components/cockpit/AmbientCockpitView.tsx` — Default cockpit tab landing page: composes PFD + MFD + control bar without drill tracking (ambient/free mode)
+- `app/src/components/cockpit/AmbientCockpitView.tsx` — Single persistent cockpit view: composes PFD + resizable MFD + control bar, phase-aware drill overlay rendering (excludes ATC and frequency cockpit_action events), auto-switches MFD to Radios tab for ATC and frequency cockpit_action events, swaps to InteractiveCockpitView for interactive_cockpit events
 - `app/src/components/cockpit/InteractiveCockpitView.tsx` — Drill-tracked interactive cockpit: composes AutopilotControlBar + PFD + MFD + ATC overlay, applies cockpit overrides, tracks success conditions
 - `app/src/components/cockpit/InteractivePFD.tsx` — Primary Flight Display: synthetic vision, altitude/speed/heading tapes, mode annunciations, flight path marker, VNAV constraint warning
-- `app/src/components/cockpit/InteractiveMFD.tsx` — Multi-Function Display: 6 tabs (Home, Audio, Flight Plan, Checklists, Synoptics, Messages) + Training Metrics panel
+- `app/src/components/cockpit/InteractiveMFD.tsx` — Multi-Function Display: 6 tabs (Home, Radios, Flight Plan, Map, Checklists, Messages) + InlineFrequencyNumpad (replaces Training Status during drills) + embedded drill lifecycle in Home tab + pilot selector + drill-aware Radios tab with inline ATC communication and frequency cockpit_action handling
 - `app/src/components/cockpit/AutopilotControlBar.tsx` — Autopilot mode buttons (FLCH, VNAV, ALT, V/S, AP, AUTO) + altitude/frequency display, writes to cockpit-store
 - `app/src/components/cockpit/ATCCommunicationOverlay.tsx` — Floating ATC transcript panel with escalation message display
+- `app/src/components/cockpit/ResizeHandle.tsx` — Draggable vertical resize handle between PFD and MFD panels (mouse + touch)
 - `app/src/hooks/useAltitudeSimulation.ts` — Interval-based altitude animation: mode-dependent descent rates, VNAV respects constraint floor, FLCH/VS override it
 - `app/src/hooks/useInteractiveCockpitTracker.ts` — Cockpit action tracker: subscribes to store changes, evaluates CockpitSuccessConditions, manages escalation timer, computes InteractiveCockpitScore
 
 ### Controls
 - `app/src/components/controls/ModeSelectionBar.tsx` — (Legacy) Autopilot mode selector; replaced by AutopilotControlBar
-- `app/src/components/controls/TouchNumpad.tsx` — 10-digit touchpad for frequency/altitude entry
+- `app/src/components/controls/TouchNumpad.tsx` — (Legacy) 10-digit touchpad modal for frequency/altitude entry; replaced by InlineFrequencyNumpad for frequency tasks
+- `app/src/components/controls/InlineFrequencyNumpad.tsx` — Inline MFD-embedded frequency numpad with digit grid, predictive suggestions from frequency database, SWAP button, collapsible layout, and contextual pulse animation during drill cockpit_action events
 - `app/src/components/controls/TouchKeyboard.tsx` — On-screen QWERTY keyboard for callsign/waypoint input
 - `app/src/components/controls/PilotPredict.tsx` — AI suggestion container with accept/reject gesture targets
 - `app/src/components/controls/PredictSuggestion.tsx` — Individual AI suggestion display (correct or trap)
@@ -123,9 +128,9 @@ Every file in the project, grouped by feature pipeline.
 
 ## 6. Layout & Navigation
 
-- `app/src/components/layout/TopNavBar.tsx` — Header: tab switcher (Cockpit, Drills, Assessment), pilot selector
+- `app/src/components/layout/TopNavBar.tsx` — (Deprecated) Former header tab switcher; navigation now embedded in MFD Home tab
 - `app/src/components/layout/CockpitShell.tsx` — (Legacy) Old cockpit layout with FlightPlan/Radios panels; replaced by AmbientCockpitView
-- `app/src/components/layout/StatusBar.tsx` — Footer: UTC clock, frequency, active drill name with green indicator, LiveKit connection, degradation badges
+- `app/src/components/layout/StatusBar.tsx` — Footer: UTC clock, frequency, pilot name, active drill name with green indicator, LiveKit connection, degradation badges
 
 ---
 
@@ -136,7 +141,7 @@ Every file in the project, grouped by feature pipeline.
 - `app/src/stores/assessment-store.ts` — Drill metrics, CBTA scores, cognitive load baselines, interactive cockpit scores, Supabase sync
 - `app/src/stores/voice-store.ts` — PTT, transcript history, LiveKit connection, ATC speaking
 - `app/src/stores/pilot-store.ts` — Selected pilot profile, experience level, accent group
-- `app/src/stores/ui-store.ts` — Active tab, sidebar visibility, UI preferences
+- `app/src/stores/ui-store.ts` — MFD tab, sidebar width, assessment overlay, numpad state
 
 ---
 
@@ -173,7 +178,7 @@ Every file in the project, grouped by feature pipeline.
 
 ### App Entry
 - `app/src/main.tsx` — React app entry point, root component mount
-- `app/src/App.tsx` — Main app: tab routing (cockpit→AmbientCockpitView, drills, assessment), useLiveKit() mount
+- `app/src/App.tsx` — Main app: single-screen cockpit (always renders AmbientCockpitView), useLiveKit() mount, assessment overlay
 
 ---
 

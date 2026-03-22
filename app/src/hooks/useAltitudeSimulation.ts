@@ -5,6 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useCockpitStore } from '@/stores/cockpit-store';
 
 const TICK_MS = 500;
+const DEFAULT_RATE = 100; // ft per tick — fallback for modes without explicit rates
 const RATES: Record<string, number> = {
   VNAV: 100,  // ft per tick — slow, constrained by vnavConstraint
   FLCH: 200,  // ft per tick — fast, ignores constraints
@@ -26,7 +27,7 @@ export function useAltitudeSimulation(active: boolean) {
     intervalRef.current = setInterval(() => {
       const state = useCockpitStore.getState();
       const { selectedMode, altitude, desiredAltitude, vnavConstraint } = state;
-      const rate = RATES[selectedMode] ?? 0;
+      const rate = RATES[selectedMode] ?? DEFAULT_RATE;
 
       if (rate === 0 || altitude === desiredAltitude) return;
 
