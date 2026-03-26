@@ -90,3 +90,16 @@ export type {
   MapLayerVisibility,
   SelectedMapFeature,
 } from './map';
+
+export type {
+  RouteWaypointType,
+  FlightPhase,
+  ProcedureStatus,
+  Procedure,
+  AltitudeRestriction,
+  EnrichedWaypoint,
+  FlightPlanMeta,
+  FlightPlanProgress,
+  FlightPlanTrainingContext,
+  FlightPlanPackage,
+} from './flight-plan';

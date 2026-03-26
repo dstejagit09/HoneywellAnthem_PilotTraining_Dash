@@ -22,13 +22,12 @@ import { MapInfoPanel } from './MapInfoPanel';
 import { AVIONICS_MAP_STYLE } from './mapTheme';
 import {
   MOCK_AIRCRAFT,
-  MOCK_AIRPORTS,
   MOCK_WAYPOINTS,
   MOCK_SCENARIO_OVERLAYS,
-  MOCK_BREADCRUMBS,
   KTEB_KPBI_MAP_CENTER,
   KTEB_KPBI_MAP_ZOOM,
 } from '@/data/map-mock-data';
+import { getRoute } from '@/data/flight-plans/route-registry';
 import type {
   AircraftState,
   MapAirport,
@@ -81,18 +80,21 @@ function MapCanvas() {
   const [selectedFeature, setSelectedFeature] = useState<SelectedMapFeature | null>(null);
 
   // ── Cockpit store ─────────────────────────────────────────────────────────
-  // TODO: replace MOCK_AIRCRAFT with real-time telemetry from cockpit store
   const heading = useCockpitStore((s) => s.heading);
   const altitude = useCockpitStore((s) => s.altitude);
   const speed = useCockpitStore((s) => s.speed);
+  const activeRouteId = useCockpitStore((s) => s.activeRouteId);
+
+  // Route config — airports, aircraft start position, map viewport
+  const routeConfig = getRoute(activeRouteId);
 
   const aircraft: AircraftState = {
     ...MOCK_AIRCRAFT,
-    heading,     // live from cockpit store
+    heading,
     altitudeFt: altitude,
     speedKts: speed,
-    // TODO: replace with real position from Anthem telemetry
-    position: MOCK_AIRCRAFT.position,
+    callsign: routeConfig.package.meta.callsign,
+    position: routeConfig.aircraftPosition,
   };
 
   // ── Scenario store — activate overlays based on active drill ──────────────
@@ -129,7 +131,7 @@ function MapCanvas() {
           }))
       : MOCK_WAYPOINTS;
 
-  const airports: MapAirport[] = MOCK_AIRPORTS;
+  const airports: MapAirport[] = routeConfig.airports;
 
   const activeWpIndex = Math.max(
     0,
@@ -195,9 +197,16 @@ function MapCanvas() {
           />
         )}
 
+        {/* Re-center map when route changes */}
+        <RouteChangeController
+          routeId={activeRouteId}
+          center={routeConfig.mapCenter}
+          zoom={routeConfig.mapZoom}
+        />
+
         {/* Breadcrumb trail */}
         {layers.breadcrumbs && (
-          <BreadcrumbTrail crumbs={MOCK_BREADCRUMBS} />
+          <BreadcrumbTrail crumbs={routeConfig.breadcrumbs} />
         )}
 
         {/* Aircraft */}
@@ -270,6 +279,28 @@ function MapCanvas() {
       )}
     </div>
   );
+}
+
+// ── RouteChangeController — pans + zooms map when active route changes ────────
+
+interface RouteChangeControllerProps {
+  routeId: string;
+  center: { lat: number; lng: number };
+  zoom: number;
+}
+
+function RouteChangeController({ routeId, center, zoom }: RouteChangeControllerProps) {
+  const map = useMap();
+  const prevRouteId = useRef(routeId);
+
+  useEffect(() => {
+    if (!map || routeId === prevRouteId.current) return;
+    prevRouteId.current = routeId;
+    map.panTo(center);
+    map.setZoom(zoom);
+  }, [map, routeId, center, zoom]);
+
+  return null;
 }
 
 // ── RecenterController — registers a recenter fn back to parent ────────────
