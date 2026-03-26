@@ -15,6 +15,7 @@ import { TranscriptDisplay } from '@/components/voice/TranscriptDisplay';
 import { PTTButton } from '@/components/voice/PTTButton';
 import { InlineFrequencyNumpad } from '@/components/controls/InlineFrequencyNumpad';
 import { isFrequencyAction, frequencyMatchesExpected } from '@/lib/frequency-utils';
+import { MapDisplay } from '@/components/map/MapDisplay';
 import type { DrillDefinition, ATCInstructionEvent, CockpitActionEvent } from '@/types';
 
 interface InteractiveMFDProps {
@@ -154,7 +155,8 @@ export function InteractiveMFD({
           </div>
         </div>
 
-        <div className="flex-1 bg-[#0f1923] p-4 overflow-auto">
+        {/* Map tab: relative+overflow-hidden so absolute children fill the panel */}
+        <div className={`flex-1 relative bg-[#0f1923] ${activeTab !== 'map' ? 'overflow-auto p-4' : 'overflow-hidden'}`}>
           {activeTab === 'home' && <HomeTab />}
           {activeTab === 'radios' && (
             <RadiosTab
@@ -1016,13 +1018,10 @@ function FlightPlanTab({
 }
 
 function MapTab() {
+  // Absolute fill: breaks out of overflow-auto height containment issue
   return (
-    <div className="flex-1 flex flex-col items-center justify-center py-12">
-      <div className="text-cyan-400/30 text-5xl mb-4">{'\uD83D\uDDFA'}</div>
-      <div className="text-cyan-300 font-mono text-sm mb-1">Map Display</div>
-      <div className="text-cyan-400/50 text-xs font-mono">
-        Enroute map view &mdash; coming soon
-      </div>
+    <div className="absolute inset-0 overflow-hidden">
+      <MapDisplay />
     </div>
   );
 }

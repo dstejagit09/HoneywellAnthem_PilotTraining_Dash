@@ -126,6 +126,26 @@ Every file in the project, grouped by feature pipeline.
 
 ---
 
+## 5b. Map Display (Aviation Map Panel — MFD Map Tab)
+
+### Map Components
+- `app/src/components/map/MapDisplay.tsx` — Main orchestrator: APIProvider wrapper, MapCanvas with Google Maps, no-key placeholder with setup instructions
+- `app/src/components/map/AircraftMarker.tsx` — Heading-aware SVG aircraft silhouette + pulsing cyan halo via AdvancedMarker (imperative)
+- `app/src/components/map/RouteOverlay.tsx` — Flight route polyline (flown dim / ahead bright) + optional dashed alternate route + breadcrumb dot trail via imperative Maps API
+- `app/src/components/map/WaypointMarkers.tsx` — Themed diamond waypoint markers, airport ring markers (departure/destination/alternate colours), clickable MarkerInfoCard popup
+- `app/src/components/map/ScenarioOverlay.tsx` — Weather zones, holding regions, comms handoff areas, VNAV conflict zones as themed circles/polygons; OverlayInfoCard popup
+- `app/src/components/map/MapControls.tsx` — Floating avionics control bar: zoom +/−, recenter, layer toggles (RTE/APT/WPT/TRK/WX)
+- `app/src/components/map/MapInfoPanel.tsx` — Bottom status strip: callsign, heading, altitude, GS, next waypoint dist/bearing, ETE to destination, active scenario badge
+
+### Map Config & Data
+- `app/src/components/map/mapTheme.ts` — Dark avionics Google Maps style array (AVIONICS_MAP_STYLE), MAP_DEFAULT_OPTIONS, MAP_COLORS palette constants
+- `app/src/data/map-mock-data.ts` — Mock aircraft state, airports (KTEB/KPBI/KMIA), waypoints (from kteb-kpbi flight plan), scenario overlays (weather/vnav/comms/holding), breadcrumb trail
+
+### Map Types
+- `app/src/types/map.ts` — AircraftState, MapAirport, MapWaypoint, ScenarioOverlay, BreadcrumbPoint, MapLayerVisibility, SelectedMapFeature
+
+---
+
 ## 6. Layout & Navigation
 
 - `app/src/components/layout/TopNavBar.tsx` — (Deprecated) Former header tab switcher; navigation now embedded in MFD Home tab

@@ -75,3 +75,18 @@ export type {
   CohortComparison,
   PercentileRank,
 } from './analytics';
+
+export type {
+  LatLon,
+  AircraftState,
+  AirportRole,
+  MapAirport,
+  WaypointType,
+  MapWaypoint,
+  OverlayKind,
+  ScenarioOverlay,
+  BreadcrumbPoint,
+  MapLayer,
+  MapLayerVisibility,
+  SelectedMapFeature,
+} from './map';
