@@ -33,3 +33,9 @@ agent/.venv/
 
 # Supabase local
 supabase/.temp/
+
+# Large media files
+Honeywell MVPs/
+
+# Accidental submodule
+HoneywellAnthem_PilotTraining_Sol
