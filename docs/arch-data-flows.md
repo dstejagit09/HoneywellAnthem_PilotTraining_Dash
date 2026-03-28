@@ -53,6 +53,8 @@ ATC drill cycle, data channel messages, PilotPredict flow, assessment pipeline, 
 | `ASSESSMENT_RESULT` | Agent → Browser | Scored readback + cognitive load + latency |
 | `BASELINE_UPDATE` | Agent → Browser | Updated cognitive load baseline after calibration |
 | `SET_BASELINE` | Browser → Agent | Restore persisted baseline on reconnect (running sums reconstructed) |
+| `ATC_ESCALATION` | Browser → Agent | Escalation text for TTS playback during interactive cockpit events |
+| `INTERACTIVE_COCKPIT_RESULT` | Browser → Agent | Final interactive cockpit score sent to agent for drill evaluation |
 
 ---
 

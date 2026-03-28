@@ -90,6 +90,7 @@ export const descentConflict: DrillDefinition = {
       timeLimitSeconds: 60,
       escalationPrompt: 'Expedite descent to 8,000, traffic below.',
       escalationDelaySeconds: 30,
+      escalationKeywords: ['expedite', 'eight thousand', '8000', 'descent', 'traffic'],
     },
   ],
   atcContext: {

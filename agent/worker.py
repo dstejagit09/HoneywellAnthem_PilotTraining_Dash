@@ -30,6 +30,8 @@ MSG_PTT_END = "PTT_END"
 MSG_SET_KEYWORDS = "SET_KEYWORDS"
 MSG_ATC_INSTRUCTION = "ATC_INSTRUCTION"
 MSG_SET_BASELINE = "SET_BASELINE"
+MSG_ATC_ESCALATION = "ATC_ESCALATION"
+MSG_INTERACTIVE_COCKPIT_RESULT = "INTERACTIVE_COCKPIT_RESULT"
 
 # Data channel message types (agent → browser)
 MSG_INTERIM_TRANSCRIPT = "INTERIM_TRANSCRIPT"
@@ -58,6 +60,9 @@ class ATCAgentWorker:
         self._room: rtc.Room | None = None
         self._participant: rtc.RemoteParticipant | None = None
         self._audio_stream: rtc.AudioStream | None = None
+
+        # Interactive cockpit result (from browser, fire-and-forget)
+        self._last_interactive_score: dict | None = None
 
         # Persistent ATC audio track — published once, reused for all instructions
         self._atc_source: rtc.AudioSource | None = None
@@ -171,6 +176,10 @@ class ATCAgentWorker:
             self._handle_atc_instruction(payload)
         elif msg_type == MSG_SET_BASELINE:
             self._handle_set_baseline(payload)
+        elif msg_type == MSG_ATC_ESCALATION:
+            self._handle_atc_escalation(payload)
+        elif msg_type == MSG_INTERACTIVE_COCKPIT_RESULT:
+            self._handle_interactive_cockpit_result(payload)
         else:
             logger.warning("Unknown message type: %s", msg_type)
 
@@ -257,6 +266,36 @@ class ATCAgentWorker:
             sample_count,
             self._baseline.is_calibrated,
         )
+
+    def _handle_atc_escalation(self, payload: dict) -> None:
+        """Speak ATC escalation via TTS and update expected readback + STT keywords."""
+        text = payload.get("text", "")
+        expected_readback = payload.get("expectedReadback", "")
+        keywords = payload.get("keywords", [])
+
+        if not text:
+            logger.warning("[ESCALATION] Empty escalation text — ignoring")
+            return
+
+        self._expected_readback = expected_readback
+        self._stt_config.drill_keywords = keywords
+        self._stt = create_stt(self._stt_config)
+
+        logger.info("[ESCALATION] Speaking: '%s', keywords=%d", text[:80], len(keywords))
+        asyncio.ensure_future(self._speak_atc(text))
+
+    def _handle_interactive_cockpit_result(self, payload: dict) -> None:
+        """Log and store the interactive cockpit score from the browser."""
+        score = payload.get("score", {})
+        logger.info(
+            "[COCKPIT-RESULT] allMet=%s, totalTimeMs=%d, timedOut=%s, escalation=%s, modeChanges=%d",
+            score.get("allConditionsMet", False),
+            score.get("totalTimeMs", 0),
+            score.get("timedOut", False),
+            score.get("escalationTriggered", False),
+            len(score.get("modeChanges", [])),
+        )
+        self._last_interactive_score = score
 
     async def _speak_atc(self, text: str) -> None:
         """Synthesize and play ATC instruction with radio static.

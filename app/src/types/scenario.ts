@@ -58,6 +58,7 @@ export interface InteractiveCockpitEvent {
   timeLimitSeconds: number;
   escalationPrompt?: string;
   escalationDelaySeconds?: number;
+  escalationKeywords?: string[];
 }
 
 export type DrillEvent =

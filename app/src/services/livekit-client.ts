@@ -15,6 +15,8 @@ export const MSG_PTT_START = 'PTT_START';
 export const MSG_PTT_END = 'PTT_END';
 export const MSG_SET_KEYWORDS = 'SET_KEYWORDS';
 export const MSG_ATC_INSTRUCTION = 'ATC_INSTRUCTION';
+export const MSG_ATC_ESCALATION = 'ATC_ESCALATION';
+export const MSG_INTERACTIVE_COCKPIT_RESULT = 'INTERACTIVE_COCKPIT_RESULT';
 
 // Data channel message types (agent → browser)
 export const MSG_INTERIM_TRANSCRIPT = 'INTERIM_TRANSCRIPT';
@@ -208,6 +210,20 @@ export async function sendATCInstruction(text: string, expectedReadback: string)
 }
 
 export const MSG_SET_BASELINE = 'SET_BASELINE';
+
+export function sendATCEscalation(
+  text: string,
+  expectedReadback: string,
+  keywords: string[],
+): void {
+  void sendDataMessage(MSG_ATC_ESCALATION, { text, expectedReadback, keywords });
+}
+
+export function sendInteractiveCockpitResult(
+  score: Record<string, unknown>,
+): void {
+  void sendDataMessage(MSG_INTERACTIVE_COCKPIT_RESULT, { score });
+}
 
 export function sendBaseline(baseline: Record<string, unknown>): void {
   void sendDataMessage(MSG_SET_BASELINE, { baselineData: baseline });

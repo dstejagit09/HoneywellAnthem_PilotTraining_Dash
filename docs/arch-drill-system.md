@@ -72,6 +72,7 @@ interface InteractiveCockpitEvent {
   timeLimitSeconds: number;
   escalationPrompt?: string;
   escalationDelaySeconds?: number;
+  escalationKeywords?: string[];     // Keyword boosting for escalation readback scoring
 }
 
 interface CockpitSuccessCondition {
@@ -146,7 +147,8 @@ InteractiveCockpitView (top-level container — for interactive_cockpit events o
    - Other modes (NAV, ALT, APR, HDG): 100ft/tick default rate
 3. **Action tracking:** `useInteractiveCockpitTracker` subscribes to cockpit-store, records mode/altitude changes with timestamps, evaluates `CockpitSuccessCondition`s on every change
 4. **Escalation:** If pilot hasn't met all conditions within `escalationDelaySeconds`, an ATC escalation message fires
-5. **Completion:** When all conditions met OR `timeLimitSeconds` expires → produces `InteractiveCockpitScore` → recorded to `assessment-store`
+4b. **Escalation voice:** If escalation fires and LiveKit is connected, `ATC_ESCALATION` message triggers agent TTS playback of the escalation prompt. Pilot may optionally read back (scored as normal readback).
+5. **Completion:** When all conditions met OR `timeLimitSeconds` expires → produces `InteractiveCockpitScore` → recorded to `assessment-store` and sent to agent via `INTERACTIVE_COCKPIT_RESULT`
 
 ### CockpitState Extensions
 

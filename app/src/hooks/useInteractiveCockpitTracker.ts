@@ -3,6 +3,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { useCockpitStore } from '@/stores/cockpit-store';
+import { sendATCEscalation, sendInteractiveCockpitResult, isConnected } from '@/services/livekit-client';
 import type { InteractiveCockpitEvent, InteractiveCockpitScore, CockpitSuccessCondition } from '@/types';
 
 interface TrackerState {
@@ -61,6 +62,7 @@ function evaluateCondition(
 export function useInteractiveCockpitTracker(
   event: InteractiveCockpitEvent,
   onComplete: (score: InteractiveCockpitScore) => void,
+  onEscalation?: (prompt: string) => void,
 ) {
   const startTimeRef = useRef(Date.now());
   const completedRef = useRef(false);
@@ -158,22 +160,38 @@ export function useInteractiveCockpitTracker(
       completedRef.current = true;
       // Small delay so the pilot sees the final state
       setTimeout(() => {
-        onComplete(buildScore(trackerState, false));
+        const score = buildScore(trackerState, false);
+        onComplete(score);
+
+        // Send result to agent for drill evaluation
+        if (isConnected()) {
+          sendInteractiveCockpitResult(score as unknown as Record<string, unknown>);
+        }
       }, 1000);
     }
   }, [trackerState.allMet, trackerState, onComplete, buildScore]);
 
   // Escalation timer
   useEffect(() => {
-    if (!event.escalationDelaySeconds || !event.escalationPrompt) return;
+    const prompt = event.escalationPrompt;
+    if (!event.escalationDelaySeconds || !prompt) return;
 
+    const keywords = event.escalationKeywords ?? [];
     const timer = setTimeout(() => {
       if (completedRef.current) return;
       setTrackerState((prev) => ({ ...prev, escalationTriggered: true }));
+
+      // Send escalation to agent for TTS playback
+      if (isConnected()) {
+        sendATCEscalation(prompt, prompt, keywords);
+      }
+
+      // Notify parent component
+      onEscalation?.(prompt);
     }, event.escalationDelaySeconds * 1000);
 
     return () => clearTimeout(timer);
-  }, [event.escalationDelaySeconds, event.escalationPrompt]);
+  }, [event.escalationDelaySeconds, event.escalationPrompt, event.escalationKeywords, onEscalation]);
 
   // Time limit
   useEffect(() => {
@@ -182,7 +200,14 @@ export function useInteractiveCockpitTracker(
       completedRef.current = true;
       setTrackerState((prev) => {
         const finalState = { ...prev, elapsedMs: event.timeLimitSeconds * 1000 };
-        onComplete(buildScore(finalState, true));
+        const score = buildScore(finalState, true);
+        onComplete(score);
+
+        // Send result to agent for drill evaluation
+        if (isConnected()) {
+          sendInteractiveCockpitResult(score as unknown as Record<string, unknown>);
+        }
+
         return finalState;
       });
     }, event.timeLimitSeconds * 1000);
