@@ -206,8 +206,21 @@ export function AltitudeTape({
         >
           {desiredAltitude.toLocaleString()}
         </text>
-        {/* Small colored icon (Figma green square) */}
-        <rect x={BODY_W - 28} y={12} width="18" height="18" rx="3" fill="#4CAF50" opacity="0.7" />
+        {/* Trend arrow — up when climbing to target, down when descending */}
+        {currentAltitude < desiredAltitude && (
+          <polyline
+            points={`${BODY_W - 22},26 ${BODY_W - 14},14 ${BODY_W - 6},26`}
+            stroke="#34d399" strokeWidth="2.5" fill="none"
+            strokeLinecap="round" strokeLinejoin="round"
+          />
+        )}
+        {currentAltitude > desiredAltitude && (
+          <polyline
+            points={`${BODY_W - 22},14 ${BODY_W - 14},26 ${BODY_W - 6},14`}
+            stroke="#34d399" strokeWidth="2.5" fill="none"
+            strokeLinecap="round" strokeLinejoin="round"
+          />
+        )}
 
         {/* ── Scrolling ticks and labels ── */}
         <g clipPath="url(#alt-tape-clip)">

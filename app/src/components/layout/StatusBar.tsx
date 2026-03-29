@@ -120,15 +120,19 @@ export function StatusBar() {
             <span style={{ ...textBase, color: '#34d399' }}>{activeDrill.title}</span>
           </span>
         ) : (
-          <span style={{ ...textBase, color: 'rgba(255,255,255,0.35)' }}>No Active Drill</span>
+          <span style={{ ...textBase, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>No Active Drill</span>
         )}
         {divider}
         <span className="flex items-center gap-1.5">
           <span
-            className="inline-block w-2 h-2 rounded-full"
-            style={{ backgroundColor: livekitConnected ? '#34d399' : 'rgba(255,255,255,0.25)' }}
+            className="inline-block rounded-full"
+            style={{
+              width: 6,
+              height: 6,
+              backgroundColor: livekitConnected ? '#34d399' : '#ef4444',
+            }}
           />
-          <span style={{ ...textBase, color: 'rgba(255,255,255,0.45)' }}>
+          <span style={{ ...textBase, color: livekitConnected ? '#34d399' : '#ef4444' }}>
             {livekitConnected ? 'Connected' : 'Offline'}
           </span>
         </span>

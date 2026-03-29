@@ -35,9 +35,9 @@ function MiniCompass({ heading }: { heading: number }) {
   return (
     <svg width={100} height={100} viewBox="0 0 100 100" style={{ display: 'block' }}>
       {/* Background fill */}
-      <circle cx={CX} cy={CY} r={R} fill="rgba(0,0,0,0.22)" />
+      <circle cx={CX} cy={CY} r={R} fill="rgba(0,0,0,0.5)" />
       {/* Outer ring */}
-      <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth={1} />
+      <circle cx={CX} cy={CY} r={R} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth={2} />
 
       {/* Rotating card — ticks + labels */}
       <g transform={`rotate(${-heading}, ${CX}, ${CY})`}>
@@ -56,17 +56,17 @@ function MiniCompass({ heading }: { heading: number }) {
             <g key={angle}>
               <line
                 x1={x1} y1={y1} x2={x2} y2={y2}
-                stroke={isN ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.35)'}
-                strokeWidth={isN ? 1.5 : 1}
+                stroke={isN ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.5)'}
+                strokeWidth={isN ? 2.5 : 1.5}
               />
               <text
                 x={lx} y={ly}
                 textAnchor="middle"
                 dominantBaseline="central"
                 fontFamily={FONT_UI}
-                fontSize={isN ? 10 : 8}
-                fontWeight={isN ? 600 : 500}
-                fill={isN ? '#22d3ee' : 'rgba(255,255,255,0.3)'}
+                fontSize={isN ? 13 : 12}
+                fontWeight={isN ? 700 : 600}
+                fill={isN ? '#22d3ee' : 'rgba(255,255,255,0.7)'}
               >
                 {label}
               </text>
@@ -85,15 +85,15 @@ function MiniCompass({ heading }: { heading: number }) {
             <line
               key={angle}
               x1={x1} y1={y1} x2={x2} y2={y2}
-              stroke="rgba(255,255,255,0.12)"
-              strokeWidth={0.5}
+              stroke="rgba(255,255,255,0.3)"
+              strokeWidth={1}
             />
           );
         })}
       </g>
 
       {/* Aircraft symbol (fixed) — simple HSI silhouette */}
-      <g stroke="rgba(255,255,255,0.45)" strokeWidth={1.2} fill="none" strokeLinecap="round">
+      <g stroke="rgba(255,255,255,0.7)" strokeWidth={1.5} fill="none" strokeLinecap="round">
         {/* Fuselage */}
         <line x1={CX} y1={CY - 16} x2={CX} y2={CY + 14} />
         {/* Wings */}
@@ -106,7 +106,7 @@ function MiniCompass({ heading }: { heading: number }) {
       <line
         x1={CX} y1={CY - R + 12}
         x2={CX} y2={CY - 18}
-        stroke="rgba(255,255,255,0.12)"
+        stroke="rgba(255,255,255,0.2)"
         strokeWidth={0.5}
         strokeDasharray="2,2"
       />
@@ -114,7 +114,7 @@ function MiniCompass({ heading }: { heading: number }) {
       {/* Lubber line — fixed triangle at 12 o'clock */}
       <polygon
         points={`${CX},${CY - R + 1} ${CX - 4},${CY - R + 9} ${CX + 4},${CY - R + 9}`}
-        fill="#0d7377"
+        fill="#22d3ee"
       />
     </svg>
   );
@@ -255,10 +255,10 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
           const tickW = isMajor10 ? 1 : 0.5;
 
           const labelFill = angDist <= 10
-            ? 'rgba(255,255,255,0.5)'
+            ? 'rgba(255,255,255,0.65)'
             : angDist <= 25
-              ? 'rgba(255,255,255,0.35)'
-              : 'rgba(255,255,255,0.25)';
+              ? 'rgba(255,255,255,0.55)'
+              : 'rgba(255,255,255,0.4)';
 
           return (
             <g key={normalD}>
@@ -272,8 +272,8 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
                   x={x} y={TAPE_H - 2}
                   textAnchor="middle"
                   fontFamily={FONT_MONO}
-                  fontSize={10}
-                  fontWeight={400}
+                  fontSize={13}
+                  fontWeight={500}
                   fill={labelFill}
                 >
                   {label}

@@ -146,7 +146,7 @@ export function InteractiveMFD({
               <tab.Icon
                 size={20}
                 strokeWidth={1.6}
-                color={isActive ? '#22d3ee' : 'rgba(255,255,255,0.45)'}
+                color={isActive ? '#22d3ee' : 'rgba(255,255,255,0.55)'}
               />
               <span
                 style={{
@@ -155,7 +155,7 @@ export function InteractiveMFD({
                   fontWeight: isActive ? 600 : 500,
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
-                  color: isActive ? '#22d3ee' : 'rgba(255,255,255,0.45)',
+                  color: isActive ? '#22d3ee' : 'rgba(255,255,255,0.55)',
                 }}
               >
                 {tab.label}
