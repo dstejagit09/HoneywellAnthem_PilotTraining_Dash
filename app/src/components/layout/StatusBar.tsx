@@ -1,6 +1,6 @@
 // Status bar with degradation badges — restyled with Graduate font and PFD palette.
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCockpitStore } from '@/stores/cockpit-store';
 import { useScenarioStore } from '@/stores/scenario-store';
 import { useVoiceStore } from '@/stores/voice-store';
@@ -38,7 +38,7 @@ function DegradationBadge({
 
   return (
     <span
-      className={`text-[9px] font-graduate uppercase px-1.5 py-0.5 rounded border ${colorClass}`}
+      className={`text-[11px] font-graduate uppercase px-1.5 py-0.5 rounded border ${colorClass}`}
     >
       {label}
     </span>
@@ -66,66 +66,73 @@ export function StatusBar() {
       : `Calibrating (${baseline.sampleCount}/10)`
     : null;
 
+  const divider = <div className="w-px h-4 shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />;
+
+  const textBase: React.CSSProperties = {
+    fontFamily: "'Inter', system-ui, sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+  };
+
   return (
     <footer
-      className="flex items-center justify-between h-8 px-4 border-t border-white/10 text-xs"
-      style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+      className="flex items-center justify-between px-4"
+      style={{ height: 38, backgroundColor: 'rgba(6,16,26,0.88)', borderTop: '1px solid rgba(255,255,255,0.06)' }}
     >
-      <div className="flex items-center gap-4">
-        <span className="font-graduate text-white/60">{utc}</span>
-        <span className="text-white/20">|</span>
-        <span className="font-graduate text-[#4EFFFC]">
+      {/* Left zone — clock · frequency · pilot */}
+      <div className="flex items-center gap-[14px]">
+        <span style={{ ...textBase, color: 'rgba(255,255,255,0.6)' }}>{utc}</span>
+        {divider}
+        <span style={{ ...textBase, fontWeight: 600, color: '#22d3ee' }}>
           {activeFrequency.value.toFixed(3)}
         </span>
-        <span className="text-white/40 font-graduate">{activeFrequency.label}</span>
+        <span style={{ ...textBase, color: 'rgba(255,255,255,0.4)' }}>{activeFrequency.label}</span>
         {activePilot && (
           <>
-            <span className="text-white/20">|</span>
-            <span className="font-graduate text-white/60">
+            {divider}
+            <span style={{ ...textBase, color: 'rgba(255,255,255,0.6)' }}>
               {activePilot.name}
             </span>
           </>
         )}
       </div>
 
-      <div className="flex items-center gap-3">
-        {/* Degradation badges */}
+      {/* Center zone — degradation badges */}
+      <div className="flex items-center gap-[10px]">
         {!hasLiveKitUrl && <DegradationBadge label="Voice Unavailable" color="amber" />}
         {!hasSupabase && <DegradationBadge label="Offline Mode" color="amber" />}
-
-        {/* Calibration status */}
         {showCalibration && calibrationLabel && (
-          <span
-            className={[
-              'text-[10px] font-graduate',
-              baseline?.isCalibrated ? 'text-anthem-green' : 'text-anthem-amber',
-            ].join(' ')}
-          >
+          <span style={{
+            ...textBase,
+            fontWeight: 600,
+            color: baseline?.isCalibrated ? '#34d399' : '#f59e0b',
+          }}>
             {calibrationLabel}
           </span>
         )}
+      </div>
 
-        <span className="text-white/20">|</span>
-
+      {/* Right zone — drill state · connectivity */}
+      <div className="flex items-center gap-[14px]">
         {drillPhase !== 'idle' && activeDrill ? (
           <span className="flex items-center gap-1.5">
-            <span className="inline-block w-2 h-2 rounded-full bg-anthem-green animate-pulse" />
-            <span className="text-anthem-green font-graduate text-[10px]">
-              {activeDrill.title}
-            </span>
+            <span className="inline-block w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
+            <span style={{ ...textBase, color: '#34d399' }}>{activeDrill.title}</span>
           </span>
         ) : (
-          <span className="text-white/40 font-graduate">No Active Drill</span>
+          <span style={{ ...textBase, color: 'rgba(255,255,255,0.55)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>No Active Drill</span>
         )}
-        <span className="text-white/20">|</span>
+        {divider}
         <span className="flex items-center gap-1.5">
           <span
-            className={[
-              'inline-block w-2 h-2 rounded-full',
-              livekitConnected ? 'bg-anthem-green' : 'bg-white/30',
-            ].join(' ')}
+            className="inline-block rounded-full"
+            style={{
+              width: 6,
+              height: 6,
+              backgroundColor: livekitConnected ? '#34d399' : '#ef4444',
+            }}
           />
-          <span className="text-white/40 font-graduate">
+          <span style={{ ...textBase, color: livekitConnected ? '#34d399' : '#ef4444' }}>
             {livekitConnected ? 'Connected' : 'Offline'}
           </span>
         </span>

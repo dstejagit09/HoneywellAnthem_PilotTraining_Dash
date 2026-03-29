@@ -55,8 +55,8 @@ export const PFD = {
   TICK_STROKE: '#FFFFFF',
 
   // Fonts
-  FONT_GRADUATE: "'Graduate', cursive",
-  FONT_GRAVITAS: "'Gravitas One', cursive",
+  FONT_GRADUATE: "'JetBrains Mono', 'Consolas', monospace",
+  FONT_GRAVITAS: "'Inter', system-ui, sans-serif",
   FONT_SCALE: 24,
   FONT_CALLOUT: 30,
   FONT_CURRENT_SPEED: 32,

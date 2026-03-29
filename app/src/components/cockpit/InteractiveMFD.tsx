@@ -2,6 +2,7 @@
 // Tabs: Home, Radios, Flight Plan, Map, Checklists, Messages (matches real Anthem).
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { Home, Radio, Route, Map, ListChecks, MessageSquare, AlertTriangle, Info, CheckCircle, type LucideIcon } from 'lucide-react';
 import { useCockpitStore } from '@/stores/cockpit-store';
 import { useUIStore, type MFDTab } from '@/stores/ui-store';
 import { useScenarioStore } from '@/stores/scenario-store';
@@ -19,6 +20,7 @@ import { MapDisplay } from '@/components/map/MapDisplay';
 import { FlightPlanTab } from '@/components/cockpit/FlightPlanTab';
 import type { DrillDefinition, ATCInstructionEvent, CockpitActionEvent } from '@/types';
 
+
 interface InteractiveMFDProps {
   scenarioStatus: 'conflict' | 'resolved';
   responseTimeMs: number;
@@ -28,13 +30,13 @@ interface InteractiveMFDProps {
   width?: number;
 }
 
-const TAB_CONFIG: { id: MFDTab; label: string; icon: string }[] = [
-  { id: 'home', label: 'Home', icon: '\u2302' },
-  { id: 'radios', label: 'Radios', icon: '\u266A' },
-  { id: 'flightplan', label: 'Flight Plan', icon: '\u2708' },
-  { id: 'map', label: 'Map', icon: '\uD83D\uDDFA' },
-  { id: 'checklists', label: 'Checklists', icon: '\u2610' },
-  { id: 'messages', label: 'Messages', icon: '\u26A0' },
+const TAB_CONFIG: { id: MFDTab; label: string; Icon: LucideIcon }[] = [
+  { id: 'home',       label: 'HOME',     Icon: Home },
+  { id: 'radios',     label: 'RADIOS',   Icon: Radio },
+  { id: 'flightplan', label: 'FLT PLAN', Icon: Route },
+  { id: 'map',        label: 'MAP',      Icon: Map },
+  { id: 'checklists', label: 'CHKLST',   Icon: ListChecks },
+  { id: 'messages',   label: 'MSGS',     Icon: MessageSquare },
 ];
 
 export function InteractiveMFD({
@@ -117,40 +119,57 @@ export function InteractiveMFD({
       style={{ backgroundColor: 'rgba(10,15,25,0.92)', width: width ?? 420 }}
     >
       {/* Tab bar */}
-      <div className="border-b border-white/10 flex items-center justify-around py-3 px-2 shadow-lg" style={{ backgroundColor: 'rgba(0,0,0,0.3)' }}>
-        {TAB_CONFIG.map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={`flex flex-col items-center gap-1.5 px-3 py-2 rounded-lg transition-all ${
-              activeTab === tab.id
-                ? 'bg-[#4EFFFC]/10'
-                : 'hover:bg-white/5'
-            }`}
-          >
-            <span
-              className={`text-lg ${
-                activeTab === tab.id ? 'text-[#4EFFFC]' : 'text-white/50'
-              }`}
+      <div
+        className="flex items-center justify-around px-1"
+        style={{ backgroundColor: 'rgba(6,16,26,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingTop: 6, paddingBottom: 6 }}
+      >
+        {TAB_CONFIG.map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className="flex flex-col items-center justify-center transition-all"
+              style={{
+                gap: 4,
+                minWidth: 52,
+                minHeight: 52,
+                flex: 1,
+                borderRadius: 0,
+                borderBottom: isActive ? '2.5px solid #0d7377' : '2.5px solid transparent',
+                backgroundColor: isActive ? 'rgba(13,115,119,0.08)' : 'transparent',
+                padding: '6px 4px',
+              }}
+              onMouseEnter={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'rgba(255,255,255,0.03)'; }}
+              onMouseLeave={(e) => { if (!isActive) (e.currentTarget as HTMLButtonElement).style.backgroundColor = 'transparent'; }}
             >
-              {tab.icon}
-            </span>
-            <span
-              className={`text-[9px] font-graduate tracking-wide ${
-                activeTab === tab.id ? 'text-[#A6FAF8]' : 'text-white/40'
-              }`}
-            >
-              {tab.label}
-            </span>
-          </button>
-        ))}
+              <tab.Icon
+                size={20}
+                strokeWidth={1.6}
+                color={isActive ? '#22d3ee' : 'rgba(255,255,255,0.55)'}
+              />
+              <span
+                style={{
+                  fontFamily: "'Inter', system-ui, sans-serif",
+                  fontSize: 10,
+                  fontWeight: isActive ? 600 : 500,
+                  letterSpacing: '0.05em',
+                  textTransform: 'uppercase',
+                  color: isActive ? '#22d3ee' : 'rgba(255,255,255,0.55)',
+                }}
+              >
+                {tab.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Tab header */}
-        <div className="border-b border-white/10 px-4 py-2.5 shadow-sm" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-          <div className="text-[#A6FAF8] text-sm font-graduate tracking-wider font-bold">
+        <div className="px-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(0,0,0,0.18)', paddingTop: 10, paddingBottom: 10 }}>
+          <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {TAB_CONFIG.find((t) => t.id === activeTab)?.label}
           </div>
         </div>
@@ -195,52 +214,22 @@ export function InteractiveMFD({
         />
       ) : conditionStatus.size > 0 ? (
         /* Active drill with interactive_cockpit metrics */
-        <div className="bg-gradient-to-b from-[#1a2736] to-[#151f2b] border-t-2 border-cyan-700/50 p-4 shadow-lg">
-          <div className="mb-3 pb-3 border-b border-cyan-700/30">
-            <div className="text-cyan-400 text-xs font-mono tracking-widest mb-2 uppercase">
+        <div style={{ background: 'rgba(6,16,26,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px' }}>
+          <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, fontWeight: 600, color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
               Training Status
             </div>
-            <div
-              className={`text-sm font-bold flex items-center gap-2 ${
-                scenarioStatus === 'conflict' ? 'text-red-400' : 'text-green-400'
-              }`}
-            >
-              {scenarioStatus === 'conflict' ? (
-                <>
-                  <span className="animate-pulse">&#9888;</span>
-                  <span>VNAV Constraint Active</span>
-                </>
-              ) : (
-                <>
-                  <span>&#10003;</span>
-                  <span>Scenario Resolved</span>
-                </>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: scenarioStatus === 'conflict' ? '#ef4444' : '#34d399' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: scenarioStatus === 'conflict' ? '#ef4444' : '#34d399', display: 'inline-block', flexShrink: 0 }} />
+              {scenarioStatus === 'conflict' ? 'VNAV Constraint Active' : 'Scenario Resolved'}
             </div>
           </div>
-          <div className="space-y-2.5 text-xs">
-            <MetricRow
-              label="Response Time"
-              value={`${responseTimeSec}s`}
-              active={responseTimeMs > 0}
-            />
-            <MetricRow
-              label="Mode Selection"
-              value={modeSelectionCorrect ? '\u2713 CORRECT' : 'PENDING'}
-              active={modeSelectionCorrect}
-            />
-            <MetricRow
-              label="ATC Compliance"
-              value={atcCompliance ? '\u2713 ACHIEVED' : 'IN PROGRESS'}
-              active={atcCompliance}
-            />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <MetricRow label="Response Time" value={`${responseTimeSec}s`} active={responseTimeMs > 0} />
+            <MetricRow label="Mode Selection" value={modeSelectionCorrect ? 'CORRECT' : 'PENDING'} active={modeSelectionCorrect} />
+            <MetricRow label="ATC Compliance" value={atcCompliance ? 'ACHIEVED' : 'IN PROGRESS'} active={atcCompliance} />
             {Array.from(conditionStatus.entries()).map(([label, met]) => (
-              <MetricRow
-                key={label}
-                label={label}
-                value={met ? '\u2713 MET' : 'PENDING'}
-                active={met}
-              />
+              <MetricRow key={label} label={label} value={met ? 'MET' : 'PENDING'} active={met} />
             ))}
           </div>
         </div>
@@ -255,11 +244,12 @@ export function InteractiveMFD({
       )}
 
       {/* Bottom status bar */}
-      <div className="bg-gradient-to-r from-[#232e3d] to-[#1a2533] border-t border-cyan-700/30 px-4 py-2.5 flex items-center justify-between text-xs shadow-lg">
+      <div className="flex items-center justify-between px-4" style={{ height: 34, borderTop: '1px solid rgba(255,255,255,0.04)', background: 'rgba(6,16,26,0.98)' }}>
         <div className="flex gap-4">
-          <StatusItem label="ALT" value={`${currentAltitude.toLocaleString()} ft`} />
-          <StatusItem label="TGT" value={`${desiredAltitude.toLocaleString()} ft`} />
+          <StatusItem label="ALT" value={`${currentAltitude.toLocaleString()}`} />
+          <StatusItem label="TGT" value={`${desiredAltitude.toLocaleString()}`} />
         </div>
+        <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>ft</span>
       </div>
     </div>
   );
@@ -267,25 +257,22 @@ export function InteractiveMFD({
 
 // --- Sub-components ---
 
-function MetricRow({
-  label,
-  value,
-  active,
-}: {
-  label: string;
-  value: string;
-  active: boolean;
-}) {
+function MetricRow({ label, value, active }: { label: string; value: string; active: boolean }) {
   return (
-    <div className="flex justify-between items-center py-1">
-      <span className="text-cyan-400/70 font-mono">{label}:</span>
-      <span
-        className={`font-bold px-2 py-0.5 rounded ${
-          active
-            ? 'text-green-400 bg-green-950/40'
-            : 'text-gray-500 bg-slate-800/50'
-        }`}
-      >
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, color: '#0891b2' }}>{label}</span>
+      <span style={{
+        fontFamily: "'Inter', system-ui, sans-serif",
+        fontSize: 11,
+        fontWeight: 600,
+        padding: '2px 7px',
+        borderRadius: 4,
+        color: active ? '#34d399' : 'rgba(255,255,255,0.25)',
+        background: active ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${active ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.06)'}`,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+      }}>
         {value}
       </span>
     </div>
@@ -294,19 +281,19 @@ function MetricRow({
 
 function StatusItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <span className="text-cyan-400/60 font-mono">{label}</span>
-      <span className="text-white ml-2 font-mono font-bold">{value}</span>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+      <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, color: '#0891b2', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontFamily: "'JetBrains Mono', 'Consolas', monospace", fontSize: 13, fontWeight: 500, color: '#22d3ee' }}>{value}</span>
     </div>
   );
 }
 
 // --- Tab Content Components ---
 
-const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: 'border-green-500 text-green-400 bg-green-500/10',
-  intermediate: 'border-amber-500 text-amber-400 bg-amber-500/10',
-  advanced: 'border-red-500 text-red-400 bg-red-500/10',
+const DIFFICULTY_COLORS: Record<string, { border: string; color: string; bg: string }> = {
+  beginner: { border: 'rgba(52,211,153,0.45)', color: '#34d399', bg: 'rgba(52,211,153,0.08)' },
+  intermediate: { border: 'rgba(252,176,69,0.45)', color: '#fbbf24', bg: 'rgba(252,176,69,0.08)' },
+  advanced: { border: 'rgba(248,113,113,0.45)', color: '#f87171', bg: 'rgba(248,113,113,0.08)' },
 };
 
 function HomeTab() {
@@ -314,42 +301,95 @@ function HomeTab() {
   const setShowAssessment = useUIStore((s) => s.setShowAssessment);
   const sessionHistory = useAssessmentStore((s) => s.sessionHistory);
 
+  const cardStyle = {
+    background: 'rgba(255,255,255,0.02)',
+    border: '1px solid rgba(255,255,255,0.05)',
+    borderRadius: 8,
+    padding: '12px 14px',
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-[14px] min-h-full">
       {/* Pilot selector */}
-      <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3">
-        <div className="text-cyan-400/70 text-[10px] font-mono uppercase tracking-wider mb-2">
-          Pilot
+      <div style={cardStyle}>
+        <div className="font-graduate font-semibold mb-2" style={{ fontSize: 14, color: '#22d3ee', letterSpacing: '0.05em' }}>
+          PILOT
         </div>
         <PilotSelector />
       </div>
 
       {/* System Status */}
-      <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-4">
-        <div className="text-cyan-300 font-bold mb-3">System Status</div>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between">
-            <span className="text-cyan-400/70">Aircraft:</span>
-            <span className="text-white">Citation CJ3+</span>
+      <div style={cardStyle}>
+        <div className="font-graduate font-semibold mb-3" style={{ fontSize: 14, color: '#22d3ee', letterSpacing: '0.02em' }}>
+          System Status
+        </div>
+        <div className="space-y-2">
+          <div className="flex justify-between items-baseline">
+            <span style={{ fontSize: 13, color: '#0891b2' }}>Aircraft:</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#e0e8ec' }}>Citation CJ3+</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-cyan-400/70">Registration:</span>
-            <span className="text-white">N389HW</span>
+          <div className="flex justify-between items-baseline">
+            <span style={{ fontSize: 13, color: '#0891b2' }}>Registration:</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#e0e8ec' }}>N389HW</span>
           </div>
-          <div className="flex justify-between">
-            <span className="text-cyan-400/70">Flight Time:</span>
-            <span className="text-white">1:23:45</span>
+          <div className="flex justify-between items-baseline">
+            <span style={{ fontSize: 13, color: '#0891b2' }}>Flight Time:</span>
+            <span style={{ fontSize: 13, fontWeight: 500, color: '#e0e8ec' }}>1:23:45</span>
           </div>
         </div>
       </div>
 
       {/* All Systems Normal */}
-      <div className="bg-slate-900/40 border border-green-600/50 rounded-lg p-4">
-        <div className="text-green-300 font-bold mb-2">All Systems Normal</div>
-        <div className="text-xs text-cyan-400/70">No cautions or warnings</div>
+      <div style={{ ...cardStyle, borderColor: 'rgba(52,211,153,0.12)' }}>
+        <div className="font-graduate font-semibold mb-1" style={{ fontSize: 14, color: '#34d399' }}>All Systems Normal</div>
+        <div style={{ fontSize: 12, color: '#0891b2' }}>No cautions or warnings</div>
       </div>
 
-      {/* Training Section — drill lifecycle hub */}
+      {/* Session Stats */}
+      <div style={cardStyle}>
+        <div className="font-graduate font-semibold mb-2" style={{ fontSize: 13, color: '#22d3ee', letterSpacing: '0.04em' }}>SESSION</div>
+        {phase === 'active' || phase === 'briefing' ? (
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Active drill:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#e0e8ec' }} className="truncate ml-2 text-right max-w-[55%]">{activeDrill?.title ?? '--'}</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Duration:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#22d3ee', fontFamily: "'JetBrains Mono', monospace" }}>
+                {startTime ? `${Math.floor((Date.now() - startTime) / 60000).toString().padStart(2,'0')}:${Math.floor(((Date.now() - startTime) % 60000) / 1000).toString().padStart(2,'0')}` : '--:--'}
+              </span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Score:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)' }}>Tracking…</span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Ready state:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#e0e8ec' }}>Idle</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Last drill:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#e0e8ec' }} className="truncate ml-2 text-right max-w-[55%]">
+                {sessionHistory.length > 0 ? (sessionHistory[sessionHistory.length - 1]?.drillId ?? '--') : '--'}
+              </span>
+            </div>
+            {sessionHistory.length === 0 && (
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>
+                Start a drill to begin tracking
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Push Training to bottom */}
+      <div className="flex-1" />
+
+      {/* Training Section — anchored to bottom */}
       <TrainingSection
         phase={phase}
         activeDrill={activeDrill}
@@ -361,10 +401,11 @@ function HomeTab() {
       {sessionHistory.length > 0 && (
         <button
           onClick={() => setShowAssessment(true)}
-          className="w-full text-left bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3 hover:border-cyan-400/60 transition-colors"
+          className="w-full text-left transition-colors"
+          style={{ ...cardStyle, borderColor: 'rgba(34,211,238,0.15)' }}
         >
-          <div className="text-cyan-300 font-bold text-sm">View Assessment</div>
-          <div className="text-cyan-400/50 text-xs font-mono mt-1">
+          <div className="font-graduate font-semibold" style={{ fontSize: 14, color: '#22d3ee' }}>View Assessment</div>
+          <div className="mt-1" style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
             {sessionHistory.length} drill{sessionHistory.length !== 1 ? 's' : ''} completed
           </div>
         </button>
@@ -397,15 +438,21 @@ function TrainingSection({
   // Idle — show Start Drill button and drill list
   if (phase === 'idle') {
     return (
-      <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3">
-        <div className="text-cyan-400 text-xs font-mono tracking-widest mb-3 uppercase">
-          Training
+      <div
+        className="rounded-lg"
+        style={{ background: 'rgba(13,115,119,0.08)', border: '1px solid rgba(13,115,119,0.25)', padding: '16px 18px' }}
+      >
+        <div className="font-graduate font-semibold mb-3" style={{ fontSize: 14, color: '#22d3ee', letterSpacing: '0.06em' }}>
+          TRAINING
         </div>
 
         {!showDrillList ? (
           <button
             onClick={() => setShowDrillList(true)}
-            className="w-full py-3 rounded-lg border-2 border-dashed border-cyan-600/40 text-cyan-300 font-bold text-sm hover:border-cyan-400 hover:bg-cyan-950/20 transition-all min-h-[44px]"
+            className="w-full transition-all active:scale-[0.98] min-h-[44px]"
+            style={{ background: '#0d7377', color: '#fff', fontSize: 14, fontWeight: 600, padding: '12px 24px', borderRadius: 6, border: 'none', cursor: 'pointer', letterSpacing: '0.02em' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0f8b8f'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0d7377'; }}
           >
             Start Drill
           </button>
@@ -453,35 +500,45 @@ function TrainingSection({
   // Briefing — compact briefing with Begin/Cancel
   if (phase === 'briefing' && activeDrill) {
     return (
-      <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3">
-        <div className="text-cyan-400 text-xs font-mono tracking-widest mb-2 uppercase">
-          Briefing
-        </div>
-        <div className="text-cyan-300 font-bold text-sm mb-1">{activeDrill.title}</div>
-        <p className="text-cyan-400/60 text-xs mb-3">{activeDrill.description}</p>
+      <div className="rounded-lg" style={{ background: 'rgba(13,115,119,0.08)', border: '1px solid rgba(13,115,119,0.25)', padding: '14px 16px' }}>
+        <div className="font-graduate font-semibold mb-2" style={{ fontSize: 14, color: '#22d3ee', letterSpacing: '0.06em' }}>BRIEFING</div>
+        <div className="font-semibold mb-1" style={{ fontSize: 13, color: '#e0e8ec' }}>{activeDrill.title}</div>
+        <p className="mb-3" style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{activeDrill.description}</p>
         <div className="flex items-center gap-2 mb-3 flex-wrap">
           <span
-            className={`rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase ${DIFFICULTY_COLORS[activeDrill.difficulty] ?? ''}`}
+            className="font-graduate font-bold uppercase"
+            style={{
+              fontSize: 10,
+              padding: '2px 8px',
+              borderRadius: 4,
+              border: `1px solid ${DIFFICULTY_COLORS[activeDrill.difficulty]?.border ?? 'rgba(255,255,255,0.2)'}`,
+              color: DIFFICULTY_COLORS[activeDrill.difficulty]?.color ?? 'rgba(255,255,255,0.5)',
+              background: DIFFICULTY_COLORS[activeDrill.difficulty]?.bg ?? 'transparent',
+              minWidth: 72,
+              textAlign: 'center',
+            }}
           >
             {activeDrill.difficulty}
           </span>
-          <span className="text-cyan-400/50 text-[10px] font-mono">
-            {activeDrill.events.length} events
-          </span>
-          <span className="text-cyan-400/50 text-[10px] font-mono">
-            {Math.ceil(activeDrill.duration / 60)} min
-          </span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{activeDrill.events.length} events</span>
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{Math.ceil(activeDrill.duration / 60)} min</span>
         </div>
         <div className="flex gap-2">
           <button
             onClick={drillStartDrill}
-            className="flex-1 py-2 rounded-lg bg-cyan-600/20 border border-cyan-500/50 text-cyan-300 font-bold text-xs hover:bg-cyan-600/30 transition-colors min-h-[44px]"
+            className="flex-1 transition-all active:scale-[0.98] min-h-[44px]"
+            style={{ background: '#0d7377', color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 6, border: 'none', cursor: 'pointer' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0f8b8f'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0d7377'; }}
           >
             Begin Drill
           </button>
           <button
             onClick={resetDrill}
-            className="py-2 px-3 rounded-lg border border-slate-600/50 text-slate-400 text-xs hover:text-white hover:border-slate-500 transition-colors min-h-[44px]"
+            className="transition-colors min-h-[44px]"
+            style={{ padding: '10px 14px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 13, cursor: 'pointer' }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.4)'; }}
           >
             Cancel
           </button>
@@ -496,24 +553,19 @@ function TrainingSection({
     const progress = ((currentEventIndex + 1) / totalEvents) * 100;
 
     return (
-      <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3">
-        <div className="text-cyan-400 text-xs font-mono tracking-widest mb-2 uppercase">
-          Active Drill
-        </div>
-        <div className="text-cyan-300 font-bold text-sm mb-2">{activeDrill.title}</div>
-        <div className="flex items-center justify-between text-xs text-cyan-400/70 mb-2">
+      <div className="rounded-lg" style={{ background: 'rgba(13,115,119,0.08)', border: '1px solid rgba(13,115,119,0.25)', padding: '14px 16px' }}>
+        <div className="font-graduate font-semibold mb-2" style={{ fontSize: 14, color: '#22d3ee', letterSpacing: '0.06em' }}>ACTIVE DRILL</div>
+        <div className="font-semibold mb-2" style={{ fontSize: 13, color: '#e0e8ec' }}>{activeDrill.title}</div>
+        <div className="flex items-center justify-between mb-2" style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
           <span>Event {currentEventIndex + 1}/{totalEvents}</span>
           <DrillTimer startTime={startTime} durationSeconds={activeDrill.duration} mode="elapsed" />
         </div>
-        <div className="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
-          <div
-            className="h-full bg-cyan-400 rounded-full transition-all"
-            style={{ width: `${progress}%` }}
-          />
+        <div className="w-full overflow-hidden" style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2 }}>
+          <div style={{ width: `${progress}%`, height: '100%', background: '#22d3ee', borderRadius: 2, transition: 'width 0.3s' }} />
         </div>
-        <div className="mt-2 flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-green-400 animate-pulse" />
-          <span className="text-green-400 text-[10px] font-mono">In Progress</span>
+        <div className="mt-2.5 flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
+          <span style={{ fontSize: 11, color: '#34d399' }}>In Progress</span>
         </div>
       </div>
     );
@@ -522,14 +574,10 @@ function TrainingSection({
   // Outcome — compact summary (full outcome is shown as overlay on PFD)
   if (phase === 'outcome') {
     return (
-      <div className="bg-slate-900/40 border border-green-600/50 rounded-lg p-3">
-        <div className="text-green-400 text-xs font-mono tracking-widest mb-2 uppercase">
-          Drill Complete
-        </div>
-        <div className="text-cyan-300 font-bold text-sm mb-2">{activeDrill?.title}</div>
-        <div className="text-cyan-400/50 text-xs font-mono">
-          Review results in the overlay.
-        </div>
+      <div className="rounded-lg" style={{ background: 'rgba(52,211,153,0.05)', border: '1px solid rgba(52,211,153,0.2)', padding: '14px 16px' }}>
+        <div className="font-graduate font-semibold mb-2" style={{ fontSize: 14, color: '#34d399', letterSpacing: '0.06em' }}>DRILL COMPLETE</div>
+        <div className="font-semibold mb-1" style={{ fontSize: 13, color: '#e0e8ec' }}>{activeDrill?.title}</div>
+        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Review results in the overlay.</div>
       </div>
     );
   }
@@ -550,42 +598,80 @@ function DrillListItem({
   onToggle: () => void;
   onStart: () => void;
 }) {
+  const diffColors = DIFFICULTY_COLORS[drill.difficulty];
   return (
-    <div className="rounded-lg border border-slate-700/50 bg-slate-900/30 overflow-hidden">
+    <div
+      className="rounded-lg overflow-hidden transition-colors"
+      style={{ border: '1px solid rgba(255,255,255,0.06)', background: 'rgba(255,255,255,0.02)' }}
+    >
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2.5 text-left hover:bg-slate-800/30 transition-colors min-h-[44px]"
+        className="w-full flex items-center justify-between px-3 py-2.5 text-left transition-all active:scale-[0.99] min-h-[44px]"
+        style={{ background: 'transparent' }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'; }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
       >
-        <span className="text-cyan-300 text-xs font-bold truncate">{drill.title}</span>
+        <span className="font-graduate font-semibold truncate" style={{ fontSize: 12, color: '#e0e8ec' }}>{drill.title}</span>
         <span
-          className={`shrink-0 ml-2 rounded border px-1.5 py-0.5 text-[9px] font-bold uppercase ${DIFFICULTY_COLORS[drill.difficulty] ?? ''}`}
+          className="font-graduate font-bold uppercase shrink-0 ml-2"
+          style={{
+            fontSize: 9,
+            padding: '2px 7px',
+            borderRadius: 4,
+            border: `1px solid ${diffColors?.border ?? 'rgba(255,255,255,0.2)'}`,
+            color: diffColors?.color ?? 'rgba(255,255,255,0.5)',
+            background: diffColors?.bg ?? 'transparent',
+            minWidth: 64,
+            textAlign: 'center',
+          }}
         >
           {drill.difficulty}
         </span>
       </button>
 
       {isExpanded && (
-        <div className="px-3 pb-3 border-t border-slate-700/30">
-          <p className="text-cyan-400/60 text-[11px] mt-2 mb-2">{drill.description}</p>
+        <div
+          className="px-3 pb-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}
+        >
+          <p className="mt-2 mb-2" style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{drill.description}</p>
           <div className="flex flex-wrap gap-1.5 mb-2">
             {drill.competencies.map((comp) => (
               <span
                 key={comp}
-                className="rounded bg-cyan-900/30 px-1.5 py-0.5 text-[9px] font-mono text-cyan-400/70"
+                className="font-graduate"
+                style={{
+                  fontSize: 9,
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                  background: 'rgba(13,115,119,0.1)',
+                  border: '1px solid rgba(13,115,119,0.3)',
+                  color: '#22d3ee',
+                }}
               >
                 {comp}
               </span>
             ))}
           </div>
-          <div className="flex items-center gap-3 text-[10px] text-cyan-400/50 font-mono mb-3">
+          <div className="flex items-center gap-3 mb-3" style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>
             <span>{drill.events.length} events</span>
             <span>{Math.ceil(drill.duration / 60)} min</span>
           </div>
           <button
             onClick={onStart}
-            className="w-full py-2 rounded-lg bg-cyan-600/20 border border-cyan-500/50 text-cyan-300 font-bold text-xs hover:bg-cyan-600/30 transition-colors min-h-[44px]"
+            className="w-full font-graduate font-bold transition-all min-h-[40px]"
+            style={{
+              borderRadius: 6,
+              background: '#0d7377',
+              border: '1px solid rgba(13,115,119,0.7)',
+              color: '#fff',
+              fontSize: 12,
+              cursor: 'pointer',
+            }}
+            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0f8b8f'; }}
+            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0d7377'; }}
           >
-            Begin
+            Begin Drill
           </button>
         </div>
       )}
@@ -717,22 +803,18 @@ function RadiosTab({
   return (
     <div className="space-y-3 flex flex-col h-full">
       {/* COM Frequencies — always visible */}
-      <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3 shrink-0">
-        <div className="text-cyan-300 font-bold mb-3 text-sm">COM Radios</div>
-        <div className="space-y-2">
-          <div className="flex justify-between items-center p-2 bg-green-950/20 border border-green-600/40 rounded">
-            <span className="text-cyan-400 text-sm">COM1</span>
-            <span className="text-green-400 font-mono font-bold">
-              {activeFrequency.value.toFixed(3)}
-            </span>
-            <span className="text-cyan-400 text-xs">Active</span>
+      <div className="shrink-0" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '12px 14px' }}>
+        <div className="font-graduate font-semibold mb-3" style={{ fontSize: 13, color: '#22d3ee', letterSpacing: '0.04em' }}>COM RADIOS</div>
+        <div className="space-y-1.5">
+          <div className="flex justify-between items-center px-2 py-1.5 rounded" style={{ background: 'rgba(13,115,119,0.06)', borderLeft: '2px solid rgba(34,211,238,0.4)' }}>
+            <span style={{ fontSize: 12, color: '#0891b2' }}>COM1</span>
+            <span className="font-mono font-semibold" style={{ fontSize: 13, color: '#22d3ee' }}>{activeFrequency.value.toFixed(3)}</span>
+            <span style={{ fontSize: 11, color: '#34d399' }}>Active</span>
           </div>
-          <div className="flex justify-between items-center p-2 bg-slate-800/40 border border-slate-600/40 rounded">
-            <span className="text-cyan-400 text-sm">COM2</span>
-            <span className="text-white font-mono">
-              {standbyFrequency.value.toFixed(3)}
-            </span>
-            <span className="text-cyan-400/50 text-xs">Standby</span>
+          <div className="flex justify-between items-center px-2 py-1.5 rounded" style={{ background: 'rgba(255,255,255,0.02)' }}>
+            <span style={{ fontSize: 12, color: '#0891b2' }}>COM2</span>
+            <span className="font-mono" style={{ fontSize: 13, color: '#e0e8ec' }}>{standbyFrequency.value.toFixed(3)}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>Standby</span>
           </div>
         </div>
       </div>
@@ -950,19 +1032,38 @@ function RadiosTab({
 
       {/* NAV Radios — only shown when no ATC or frequency cockpit_action event is active */}
       {!isATCEvent && !isCockpitActionFreqEvent && (
-        <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3 shrink-0">
-          <div className="text-cyan-300 font-bold mb-3 text-sm">NAV Radios</div>
-          <div className="space-y-2">
-            <div className="flex justify-between items-center p-2 bg-slate-800/40 border border-slate-600/40 rounded">
-              <span className="text-cyan-400 text-sm">NAV1</span>
-              <span className="text-white font-mono">110.40</span>
-            </div>
-            <div className="flex justify-between items-center p-2 bg-slate-800/40 border border-slate-600/40 rounded">
-              <span className="text-cyan-400 text-sm">NAV2</span>
-              <span className="text-white font-mono">114.90</span>
+        <>
+          <div className="shrink-0" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '12px 14px' }}>
+            <div className="font-graduate font-semibold mb-3" style={{ fontSize: 13, color: '#22d3ee', letterSpacing: '0.04em' }}>NAV RADIOS</div>
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center px-2 py-1.5 rounded" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <span style={{ fontSize: 12, color: '#0891b2' }}>NAV1</span>
+                <span className="font-mono" style={{ fontSize: 13, color: '#e0e8ec' }}>110.40</span>
+              </div>
+              <div className="flex justify-between items-center px-2 py-1.5 rounded" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <span style={{ fontSize: 12, color: '#0891b2' }}>NAV2</span>
+                <span className="font-mono" style={{ fontSize: 13, color: '#e0e8ec' }}>114.90</span>
+              </div>
             </div>
           </div>
-        </div>
+
+          {/* RECENT — quick-tune frequencies */}
+          <div className="shrink-0" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 8, padding: '12px 14px' }}>
+            <div className="font-graduate font-semibold mb-2" style={{ fontSize: 13, color: '#22d3ee', letterSpacing: '0.04em' }}>RECENT</div>
+            <div className="space-y-0.5">
+              {[
+                { freq: '121.500', label: 'GUARD' },
+                { freq: '124.350', label: 'KPBI Tower' },
+                { freq: '118.400', label: 'KTEB Appr' },
+              ].map(({ freq, label }) => (
+                <div key={freq} className="flex justify-between items-center px-2 py-1.5 rounded cursor-pointer transition-colors hover:bg-white/[0.03]">
+                  <span className="font-mono font-medium" style={{ fontSize: 13, color: '#22d3ee' }}>{freq}</span>
+                  <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
@@ -980,42 +1081,58 @@ function MapTab() {
 function ChecklistsTab() {
   return (
     <div className="space-y-3">
-      <div className="bg-green-950/20 border border-green-600/50 rounded-lg p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-green-400 font-bold">Before Takeoff</div>
-          <div className="text-green-400 text-xs">&#10003; Complete</div>
+      {/* Progress summary */}
+      <div>
+        <div className="flex justify-between items-center mb-1.5">
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Phase progress</span>
+          <span style={{ fontSize: 11, fontWeight: 500, color: '#22d3ee' }}>2 / 4 complete</span>
+        </div>
+        <div style={{ height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{ width: '50%', height: '100%', background: '#34d399', borderRadius: 2 }} />
         </div>
       </div>
-      <div className="bg-green-950/20 border border-green-600/50 rounded-lg p-3">
-        <div className="flex items-center justify-between mb-2">
-          <div className="text-green-400 font-bold">After Takeoff</div>
-          <div className="text-green-400 text-xs">&#10003; Complete</div>
+
+      {/* Complete phases */}
+      {[{ label: 'Before Takeoff' }, { label: 'After Takeoff' }].map(({ label }) => (
+        <div key={label} style={{ background: 'rgba(52,211,153,0.04)', border: '1px solid rgba(52,211,153,0.15)', borderRadius: 8, padding: '10px 14px' }}>
+          <div className="flex items-center justify-between">
+            <div className="font-graduate font-semibold" style={{ fontSize: 13, color: '#34d399' }}>{label}</div>
+            <div className="flex items-center gap-1" style={{ fontSize: 11, color: '#34d399' }}>
+              <span>&#10003;</span><span>Complete</span>
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="bg-slate-900/40 border-2 border-cyan-600/50 rounded-lg p-3">
+      ))}
+
+      {/* Active phase */}
+      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1.5px solid rgba(34,211,238,0.25)', borderRadius: 8, padding: '12px 14px' }}>
         <div className="flex items-center justify-between mb-3">
-          <div className="text-cyan-300 font-bold">Descent</div>
-          <div className="text-amber-400 text-xs">In Progress</div>
+          <div className="font-graduate font-semibold" style={{ fontSize: 13, color: '#22d3ee' }}>Descent</div>
+          <div style={{ fontSize: 11, fontWeight: 600, color: '#eab308' }}>In Progress</div>
         </div>
-        <div className="space-y-2 text-sm">
-          <div className="flex items-center gap-2 text-green-400">
-            <span>&#10003;</span>
-            <span>Altimeters - Set</span>
-          </div>
-          <div className="flex items-center gap-2 text-green-400">
-            <span>&#10003;</span>
-            <span>Autopilot - Check</span>
-          </div>
-          <div className="flex items-center gap-2 text-cyan-300">
-            <span>&#9675;</span>
-            <span>Approach Briefing - Complete</span>
-          </div>
+        <div className="space-y-2">
+          {[
+            { done: true, label: 'Altimeters — Set' },
+            { done: true, label: 'Autopilot — Check' },
+            { done: false, label: 'Approach Briefing — Complete' },
+          ].map(({ done, label }) => (
+            <div key={label} className="flex items-center gap-2.5">
+              {done ? (
+                <span style={{ fontSize: 13, color: '#34d399', flexShrink: 0 }}>&#10003;</span>
+              ) : (
+                <span style={{ display: 'inline-block', width: 14, height: 14, borderRadius: '50%', border: '1.5px solid rgba(255,255,255,0.3)', flexShrink: 0 }} />
+              )}
+              <span style={{ fontSize: 12, color: done ? '#34d399' : '#e0e8ec' }}>{label}</span>
+            </div>
+          ))}
         </div>
       </div>
-      <div className="bg-slate-900/40 border border-slate-600/50 rounded-lg p-3 opacity-50">
+
+      {/* Pending phase */}
+      <div style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: 8, padding: '10px 14px', opacity: 0.5 }}>
         <div className="flex items-center justify-between">
-          <div className="text-slate-400 font-bold">Before Landing</div>
-          <div className="text-slate-400 text-xs">Pending</div>
+          <div className="font-graduate font-semibold" style={{ fontSize: 13, color: 'rgba(255,255,255,0.4)' }}>Before Landing</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>Pending</div>
         </div>
       </div>
     </div>
@@ -1027,55 +1144,74 @@ function MessagesTab({
 }: {
   scenarioStatus: 'conflict' | 'resolved';
 }) {
+  const ts = new Date().toISOString().slice(11, 16) + 'Z';
+  const activeMessages = scenarioStatus === 'conflict' ? 1 : 0;
+
   return (
     <div className="space-y-2">
+      {/* Group header — ACTIVE */}
+      {activeMessages > 0 && (
+        <div style={{ fontSize: 10, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.25)', paddingBottom: 4 }}>
+          ACTIVE
+        </div>
+      )}
+
       {scenarioStatus === 'conflict' && (
-        <div className="bg-amber-950/30 border border-amber-600/50 rounded-lg p-3">
+        <div style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.2)', borderLeft: '3px solid #eab308', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
           <div className="flex items-start gap-2">
-            <span className="text-amber-400 text-lg">&#9888;</span>
-            <div className="flex-1">
-              <div className="text-amber-400 font-bold text-sm mb-1">CAUTION</div>
-              <div className="text-amber-300 text-xs">
-                Altitude constraint active - VNAV limiting descent
+            <AlertTriangle size={15} strokeWidth={1.8} color="#eab308" style={{ flexShrink: 0, marginTop: 1 }} />
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-baseline mb-1">
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#eab308' }}>CAUTION</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
               </div>
-              <div className="text-amber-400/60 text-[10px] mt-1">
-                {new Date().toISOString().slice(11, 19)}Z
-              </div>
+              <div style={{ fontSize: 12, color: 'rgba(234,179,8,0.8)' }}>Altitude constraint active — VNAV limiting descent</div>
             </div>
           </div>
         </div>
       )}
-      <div className="bg-slate-900/40 border border-cyan-600/50 rounded-lg p-3">
+
+      {/* Group header — RESOLVED */}
+      <div style={{ fontSize: 10, letterSpacing: '0.06em', color: 'rgba(255,255,255,0.25)', paddingTop: 4, paddingBottom: 4 }}>
+        RESOLVED
+      </div>
+
+      <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '3px solid rgba(34,211,238,0.3)', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
         <div className="flex items-start gap-2">
-          <span className="text-cyan-400 text-lg">&#8505;</span>
-          <div className="flex-1">
-            <div className="text-cyan-300 font-bold text-sm mb-1">ADVISORY</div>
-            <div className="text-cyan-200 text-xs">
-              Approaching 10,000 ft - Speed restriction 250 KIAS
+          <Info size={15} strokeWidth={1.8} color="#22d3ee" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-baseline mb-1">
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#22d3ee' }}>ADVISORY</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
             </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Approaching 10,000 ft — speed restriction 250 KIAS</div>
           </div>
         </div>
       </div>
-      <div className="bg-slate-900/40 border border-green-600/50 rounded-lg p-3">
+
+      <div style={{ background: 'rgba(52,211,153,0.03)', border: '1px solid rgba(52,211,153,0.1)', borderLeft: '3px solid rgba(52,211,153,0.4)', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
         <div className="flex items-start gap-2">
-          <span className="text-green-400 text-lg">&#10003;</span>
-          <div className="flex-1">
-            <div className="text-green-300 font-bold text-sm mb-1">STATUS</div>
-            <div className="text-green-200 text-xs">
-              Autopilot engaged - All systems normal
+          <CheckCircle size={15} strokeWidth={1.8} color="#34d399" style={{ flexShrink: 0, marginTop: 1 }} />
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-baseline mb-1">
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#34d399' }}>STATUS</div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
             </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Autopilot engaged — all systems normal</div>
           </div>
         </div>
       </div>
+
       {scenarioStatus === 'resolved' && (
-        <div className="bg-green-950/20 border border-green-600/50 rounded-lg p-3">
+        <div style={{ background: 'rgba(52,211,153,0.03)', border: '1px solid rgba(52,211,153,0.12)', borderLeft: '3px solid #34d399', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
           <div className="flex items-start gap-2">
-            <span className="text-green-400 text-lg">&#10003;</span>
-            <div className="flex-1">
-              <div className="text-green-300 font-bold text-sm mb-1">RESOLVED</div>
-              <div className="text-green-200 text-xs">
-                Automation conflict resolved - descending to assigned altitude
+            <CheckCircle size={15} strokeWidth={1.8} color="#34d399" style={{ flexShrink: 0, marginTop: 1 }} />
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-baseline mb-1">
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#34d399' }}>RESOLVED</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
               </div>
+              <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Automation conflict resolved — descending to assigned altitude</div>
             </div>
           </div>
         </div>

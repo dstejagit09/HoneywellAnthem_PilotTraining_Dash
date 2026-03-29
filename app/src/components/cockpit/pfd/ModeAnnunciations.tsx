@@ -1,5 +1,4 @@
-// Mode annunciations — mode/status pills, VNAV constraint warning, V/S button.
-// Cleaned up: removed descent badge for less clutter.
+// Mode annunciations — mode/status pills, VNAV constraint warning.
 
 import type { CockpitMode } from '@/types';
 
@@ -10,7 +9,6 @@ interface ModeAnnunciationsProps {
   vnavConstraint: number;
   desiredAltitude: number;
   isDescending: boolean;
-  onVSClick: () => void;
 }
 
 export function ModeAnnunciations({
@@ -19,24 +17,35 @@ export function ModeAnnunciations({
   selectedMode,
   vnavConstraint,
   desiredAltitude,
-  onVSClick,
 }: ModeAnnunciationsProps) {
   return (
     <>
       {/* Mode annunciations (top center) */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         <div
-          className="px-2.5 py-0.5 rounded text-xs font-bold shadow font-graduate"
-          style={{ backgroundColor: 'rgba(34,197,94,0.85)', color: '#000' }}
+          style={{
+            fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: 12,
+            fontWeight: 600,
+            padding: '4px 14px',
+            borderRadius: 4,
+            backgroundColor: 'rgba(13,115,119,0.4)',
+            border: '1px solid rgba(13,115,119,0.65)',
+            color: '#5eead4',
+          }}
         >
           {modeDisplay}
         </div>
         <div
-          className="px-2.5 py-0.5 rounded text-xs border shadow font-graduate"
           style={{
-            backgroundColor: 'rgba(0,0,0,0.45)',
-            color: '#A6FAF8',
-            borderColor: 'rgba(78,255,252,0.3)',
+            fontFamily: "'Inter', system-ui, sans-serif",
+            fontSize: 12,
+            fontWeight: 600,
+            padding: '4px 14px',
+            borderRadius: 4,
+            backgroundColor: 'rgba(6,16,26,0.75)',
+            border: '1px solid rgba(13,115,119,0.45)',
+            color: '#5eead4',
           }}
         >
           {status}
@@ -58,24 +67,6 @@ export function ModeAnnunciations({
         </div>
       )}
 
-      {/* V/S mode button (bottom left) */}
-      <div className="absolute bottom-4 left-3 z-30">
-        <button
-          onClick={onVSClick}
-          className="px-3 py-1.5 text-xs font-bold rounded border transition-all shadow font-graduate"
-          style={
-            selectedMode === 'VS'
-              ? { backgroundColor: 'rgba(34,197,94,0.85)', color: '#000', borderColor: '#22c55e' }
-              : {
-                  backgroundColor: 'rgba(0,0,0,0.45)',
-                  color: '#A6FAF8',
-                  borderColor: 'rgba(78,255,252,0.3)',
-                }
-          }
-        >
-          V/S
-        </button>
-      </div>
     </>
   );
 }

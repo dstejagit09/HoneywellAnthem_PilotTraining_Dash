@@ -268,7 +268,7 @@ function ProgressCard({
       </div>
 
       {/* Progress bar */}
-      <div className="relative h-1.5 bg-slate-800/60 rounded-full overflow-hidden mb-1.5">
+      <div className="relative bg-slate-800/60 rounded-full overflow-hidden mb-1.5" style={{ height: 5 }}>
         <div
           className={[
             'absolute inset-y-0 left-0 rounded-full transition-all duration-500',
@@ -510,20 +510,20 @@ function WaypointLegs({
           Layout: [icon w-5][WPT w-14][ANNO w-7][AWY w-9][LEG w-11][BRG w-9][ALT flex-1] */}
       <div className="flex items-center px-2.5 py-1 border-b border-cyan-800/30 bg-[#0a1118]">
         <span className="w-5 shrink-0" />
-        <span className="w-14 text-[8px] font-mono text-cyan-700/50 uppercase tracking-wider shrink-0">
+        <span className="w-14 font-mono uppercase tracking-wider shrink-0" style={{ fontSize: 11, opacity: 0.5, color: '#22d3ee' }}>
           WPT
         </span>
         <span className="w-7 shrink-0" /> {/* ANNO column — no header */}
-        <span className="w-9 text-[8px] font-mono text-cyan-700/50 uppercase tracking-wider shrink-0">
+        <span className="w-9 font-mono uppercase tracking-wider shrink-0" style={{ fontSize: 11, opacity: 0.5, color: '#22d3ee' }}>
           AWY
         </span>
-        <span className="w-11 text-[8px] font-mono text-cyan-700/50 uppercase tracking-wider text-right pr-1 shrink-0">
+        <span className="w-11 font-mono uppercase tracking-wider text-right pr-1 shrink-0" style={{ fontSize: 11, opacity: 0.5, color: '#22d3ee' }}>
           LEG
         </span>
-        <span className="w-9 text-[8px] font-mono text-cyan-700/50 uppercase tracking-wider text-right pr-1 shrink-0">
+        <span className="w-9 font-mono uppercase tracking-wider text-right pr-1 shrink-0" style={{ fontSize: 11, opacity: 0.5, color: '#22d3ee' }}>
           BRG
         </span>
-        <span className="flex-1 text-[8px] font-mono text-cyan-700/50 uppercase tracking-wider text-right pr-1">
+        <span className="flex-1 font-mono uppercase tracking-wider text-right pr-1" style={{ fontSize: 11, opacity: 0.5, color: '#22d3ee' }}>
           ALT
         </span>
       </div>
@@ -565,7 +565,7 @@ function WaypointLegs({
                 'flex items-center px-2.5 py-1.5 border-b border-cyan-900/20 last:border-0',
                 'cursor-pointer transition-all select-none',
                 isActive
-                  ? 'bg-cyan-900/25 border-l-2 border-l-cyan-400/80 shadow-[inset_0_0_8px_rgba(0,212,255,0.05)]'
+                  ? 'border-l-2 border-l-cyan-400/80'
                   : isSelected
                     ? 'bg-slate-800/40 border-l-2 border-l-slate-500/60'
                     : isPassed
@@ -574,6 +574,7 @@ function WaypointLegs({
                         ? 'bg-green-950/15 hover:bg-green-950/25'
                         : 'hover:bg-cyan-900/10',
               ].join(' ')}
+              style={isActive ? { background: 'rgba(13,115,119,0.12)' } : undefined}
             >
               {/* Status icon — col w-5 */}
               <div className="w-5 shrink-0 text-center">
@@ -792,12 +793,15 @@ function TrainingStatusCard({
       <div className="grid grid-cols-2 gap-x-4 gap-y-0.5">
         {flagItems.map(({ key, label }) => (
           <div key={key} className="flex items-center gap-1.5">
-            <span className={[
-              'text-[9px]',
-              flags[key] ? 'text-amber-400' : 'text-cyan-800/50',
-            ].join(' ')}>
-              {flags[key] ? '●' : '○'}
-            </span>
+            <span
+              className="inline-block rounded-full shrink-0"
+              style={{
+                width: 8,
+                height: 8,
+                background: flags[key] ? 'rgba(251,191,36,0.85)' : 'transparent',
+                border: flags[key] ? '1px solid rgba(251,191,36,0.6)' : '1px solid rgba(34,211,238,0.2)',
+              }}
+            />
             <span className={[
               'text-[9px] font-mono',
               flags[key] ? 'text-amber-300/90' : 'text-cyan-700/40',

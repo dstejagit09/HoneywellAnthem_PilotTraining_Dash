@@ -37,8 +37,8 @@
   /* Typography */
   --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
   --font-sans: 'Inter', system-ui, sans-serif;
-  --font-graduate: 'Graduate', cursive;
-  --font-gravitas: 'Gravitas One', cursive;
+  --font-graduate: 'Inter', system-ui, sans-serif;
+  --font-gravitas: 'Inter', system-ui, sans-serif;
 
   /* PFD instrument colors */
   --color-pfd-cyan: #4EFFFC;
