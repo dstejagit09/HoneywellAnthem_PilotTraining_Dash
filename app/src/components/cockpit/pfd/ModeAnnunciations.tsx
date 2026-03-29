@@ -23,26 +23,28 @@ export function ModeAnnunciations({
       {/* Mode annunciations (top center) */}
       <div className="absolute top-3 left-1/2 -translate-x-1/2 flex gap-2 z-20">
         <div
-          className="font-bold font-graduate"
           style={{
+            fontFamily: "'Inter', system-ui, sans-serif",
             fontSize: 12,
-            padding: '3px 12px',
+            fontWeight: 600,
+            padding: '4px 14px',
             borderRadius: 4,
-            backgroundColor: 'rgba(13,115,119,0.35)',
-            border: '1px solid rgba(13,115,119,0.6)',
+            backgroundColor: 'rgba(13,115,119,0.4)',
+            border: '1px solid rgba(13,115,119,0.65)',
             color: '#5eead4',
           }}
         >
           {modeDisplay}
         </div>
         <div
-          className="font-bold font-graduate"
           style={{
+            fontFamily: "'Inter', system-ui, sans-serif",
             fontSize: 12,
-            padding: '3px 12px',
+            fontWeight: 600,
+            padding: '4px 14px',
             borderRadius: 4,
-            backgroundColor: 'rgba(6,16,26,0.7)',
-            border: '1px solid rgba(13,115,119,0.4)',
+            backgroundColor: 'rgba(6,16,26,0.75)',
+            border: '1px solid rgba(13,115,119,0.45)',
             color: '#5eead4',
           }}
         >

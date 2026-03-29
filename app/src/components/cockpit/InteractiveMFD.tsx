@@ -2,7 +2,7 @@
 // Tabs: Home, Radios, Flight Plan, Map, Checklists, Messages (matches real Anthem).
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Home, Radio, Route, Map, ListChecks, MessageSquare } from 'lucide-react';
+import { Home, Radio, Route, Map, ListChecks, MessageSquare, AlertTriangle, Info, CheckCircle, type LucideIcon } from 'lucide-react';
 import { useCockpitStore } from '@/stores/cockpit-store';
 import { useUIStore, type MFDTab } from '@/stores/ui-store';
 import { useScenarioStore } from '@/stores/scenario-store';
@@ -20,7 +20,6 @@ import { MapDisplay } from '@/components/map/MapDisplay';
 import { FlightPlanTab } from '@/components/cockpit/FlightPlanTab';
 import type { DrillDefinition, ATCInstructionEvent, CockpitActionEvent } from '@/types';
 
-type LucideIcon = React.ComponentType<{ size?: number; strokeWidth?: number; color?: string }>;
 
 interface InteractiveMFDProps {
   scenarioStatus: 'conflict' | 'resolved';
@@ -147,7 +146,7 @@ export function InteractiveMFD({
               <tab.Icon
                 size={20}
                 strokeWidth={1.6}
-                color={isActive ? '#22d3ee' : 'rgba(255,255,255,0.4)'}
+                color={isActive ? '#22d3ee' : 'rgba(255,255,255,0.45)'}
               />
               <span
                 style={{
@@ -156,7 +155,7 @@ export function InteractiveMFD({
                   fontWeight: isActive ? 600 : 500,
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
-                  color: isActive ? '#22d3ee' : 'rgba(255,255,255,0.4)',
+                  color: isActive ? '#22d3ee' : 'rgba(255,255,255,0.45)',
                 }}
               >
                 {tab.label}
@@ -169,8 +168,8 @@ export function InteractiveMFD({
       {/* Content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Tab header */}
-        <div className="border-b border-white/10 px-4 py-2.5 shadow-sm" style={{ backgroundColor: 'rgba(0,0,0,0.2)' }}>
-          <div className="text-[#A6FAF8] text-sm font-graduate tracking-wider font-bold">
+        <div className="px-4" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)', backgroundColor: 'rgba(0,0,0,0.18)', paddingTop: 10, paddingBottom: 10 }}>
+          <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 15, fontWeight: 600, color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             {TAB_CONFIG.find((t) => t.id === activeTab)?.label}
           </div>
         </div>
@@ -215,52 +214,22 @@ export function InteractiveMFD({
         />
       ) : conditionStatus.size > 0 ? (
         /* Active drill with interactive_cockpit metrics */
-        <div className="bg-gradient-to-b from-[#1a2736] to-[#151f2b] border-t-2 border-cyan-700/50 p-4 shadow-lg">
-          <div className="mb-3 pb-3 border-b border-cyan-700/30">
-            <div className="text-cyan-400 text-xs font-mono tracking-widest mb-2 uppercase">
+        <div style={{ background: 'rgba(6,16,26,0.98)', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '12px 16px' }}>
+          <div style={{ marginBottom: 10, paddingBottom: 10, borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+            <div style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, fontWeight: 600, color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6 }}>
               Training Status
             </div>
-            <div
-              className={`text-sm font-bold flex items-center gap-2 ${
-                scenarioStatus === 'conflict' ? 'text-red-400' : 'text-green-400'
-              }`}
-            >
-              {scenarioStatus === 'conflict' ? (
-                <>
-                  <span className="animate-pulse">&#9888;</span>
-                  <span>VNAV Constraint Active</span>
-                </>
-              ) : (
-                <>
-                  <span>&#10003;</span>
-                  <span>Scenario Resolved</span>
-                </>
-              )}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: scenarioStatus === 'conflict' ? '#ef4444' : '#34d399' }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: scenarioStatus === 'conflict' ? '#ef4444' : '#34d399', display: 'inline-block', flexShrink: 0 }} />
+              {scenarioStatus === 'conflict' ? 'VNAV Constraint Active' : 'Scenario Resolved'}
             </div>
           </div>
-          <div className="space-y-2.5 text-xs">
-            <MetricRow
-              label="Response Time"
-              value={`${responseTimeSec}s`}
-              active={responseTimeMs > 0}
-            />
-            <MetricRow
-              label="Mode Selection"
-              value={modeSelectionCorrect ? '\u2713 CORRECT' : 'PENDING'}
-              active={modeSelectionCorrect}
-            />
-            <MetricRow
-              label="ATC Compliance"
-              value={atcCompliance ? '\u2713 ACHIEVED' : 'IN PROGRESS'}
-              active={atcCompliance}
-            />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <MetricRow label="Response Time" value={`${responseTimeSec}s`} active={responseTimeMs > 0} />
+            <MetricRow label="Mode Selection" value={modeSelectionCorrect ? 'CORRECT' : 'PENDING'} active={modeSelectionCorrect} />
+            <MetricRow label="ATC Compliance" value={atcCompliance ? 'ACHIEVED' : 'IN PROGRESS'} active={atcCompliance} />
             {Array.from(conditionStatus.entries()).map(([label, met]) => (
-              <MetricRow
-                key={label}
-                label={label}
-                value={met ? '\u2713 MET' : 'PENDING'}
-                active={met}
-              />
+              <MetricRow key={label} label={label} value={met ? 'MET' : 'PENDING'} active={met} />
             ))}
           </div>
         </div>
@@ -275,11 +244,12 @@ export function InteractiveMFD({
       )}
 
       {/* Bottom status bar */}
-      <div className="bg-gradient-to-r from-[#232e3d] to-[#1a2533] border-t border-cyan-700/30 px-4 py-2.5 flex items-center justify-between text-xs shadow-lg">
+      <div className="flex items-center justify-between px-4" style={{ height: 34, borderTop: '1px solid rgba(255,255,255,0.04)', background: 'rgba(6,16,26,0.98)' }}>
         <div className="flex gap-4">
-          <StatusItem label="ALT" value={`${currentAltitude.toLocaleString()} ft`} />
-          <StatusItem label="TGT" value={`${desiredAltitude.toLocaleString()} ft`} />
+          <StatusItem label="ALT" value={`${currentAltitude.toLocaleString()}`} />
+          <StatusItem label="TGT" value={`${desiredAltitude.toLocaleString()}`} />
         </div>
+        <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>ft</span>
       </div>
     </div>
   );
@@ -287,25 +257,22 @@ export function InteractiveMFD({
 
 // --- Sub-components ---
 
-function MetricRow({
-  label,
-  value,
-  active,
-}: {
-  label: string;
-  value: string;
-  active: boolean;
-}) {
+function MetricRow({ label, value, active }: { label: string; value: string; active: boolean }) {
   return (
-    <div className="flex justify-between items-center py-1">
-      <span className="text-cyan-400/70 font-mono">{label}:</span>
-      <span
-        className={`font-bold px-2 py-0.5 rounded ${
-          active
-            ? 'text-green-400 bg-green-950/40'
-            : 'text-gray-500 bg-slate-800/50'
-        }`}
-      >
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 12, color: '#0891b2' }}>{label}</span>
+      <span style={{
+        fontFamily: "'Inter', system-ui, sans-serif",
+        fontSize: 11,
+        fontWeight: 600,
+        padding: '2px 7px',
+        borderRadius: 4,
+        color: active ? '#34d399' : 'rgba(255,255,255,0.25)',
+        background: active ? 'rgba(52,211,153,0.08)' : 'rgba(255,255,255,0.03)',
+        border: `1px solid ${active ? 'rgba(52,211,153,0.2)' : 'rgba(255,255,255,0.06)'}`,
+        textTransform: 'uppercase',
+        letterSpacing: '0.04em',
+      }}>
         {value}
       </span>
     </div>
@@ -314,9 +281,9 @@ function MetricRow({
 
 function StatusItem({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <span className="text-cyan-400/60 font-mono">{label}</span>
-      <span className="text-white ml-2 font-mono font-bold">{value}</span>
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+      <span style={{ fontFamily: "'Inter', system-ui, sans-serif", fontSize: 11, color: '#0891b2', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontFamily: "'JetBrains Mono', 'Consolas', monospace", fontSize: 13, fontWeight: 500, color: '#22d3ee' }}>{value}</span>
     </div>
   );
 }
@@ -381,20 +348,40 @@ function HomeTab() {
       {/* Session Stats */}
       <div style={cardStyle}>
         <div className="font-graduate font-semibold mb-2" style={{ fontSize: 13, color: '#22d3ee', letterSpacing: '0.04em' }}>SESSION</div>
-        {sessionHistory.length === 0 ? (
-          <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', textAlign: 'center', padding: '6px 0' }}>
-            Start a drill to begin tracking
+        {phase === 'active' || phase === 'briefing' ? (
+          <div className="space-y-1.5">
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Active drill:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#e0e8ec' }} className="truncate ml-2 text-right max-w-[55%]">{activeDrill?.title ?? '--'}</span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Duration:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#22d3ee', fontFamily: "'JetBrains Mono', monospace" }}>
+                {startTime ? `${Math.floor((Date.now() - startTime) / 60000).toString().padStart(2,'0')}:${Math.floor(((Date.now() - startTime) % 60000) / 1000).toString().padStart(2,'0')}` : '--:--'}
+              </span>
+            </div>
+            <div className="flex justify-between items-baseline">
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Score:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: 'rgba(255,255,255,0.4)' }}>Tracking…</span>
+            </div>
           </div>
         ) : (
           <div className="space-y-1.5">
             <div className="flex justify-between items-baseline">
-              <span style={{ fontSize: 12, color: '#0891b2' }}>Drills completed:</span>
-              <span style={{ fontSize: 13, fontWeight: 500, color: '#e0e8ec' }}>{sessionHistory.length}</span>
+              <span style={{ fontSize: 12, color: '#0891b2' }}>Ready state:</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#e0e8ec' }}>Idle</span>
             </div>
             <div className="flex justify-between items-baseline">
               <span style={{ fontSize: 12, color: '#0891b2' }}>Last drill:</span>
-              <span style={{ fontSize: 12, fontWeight: 500, color: '#e0e8ec' }} className="truncate ml-2 text-right max-w-[60%]">{sessionHistory[sessionHistory.length - 1]?.drillId ?? '--'}</span>
+              <span style={{ fontSize: 12, fontWeight: 500, color: '#e0e8ec' }} className="truncate ml-2 text-right max-w-[55%]">
+                {sessionHistory.length > 0 ? (sessionHistory[sessionHistory.length - 1]?.drillId ?? '--') : '--'}
+              </span>
             </div>
+            {sessionHistory.length === 0 && (
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', marginTop: 4 }}>
+                Start a drill to begin tracking
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -1172,10 +1159,10 @@ function MessagesTab({
       {scenarioStatus === 'conflict' && (
         <div style={{ background: 'rgba(234,179,8,0.05)', border: '1px solid rgba(234,179,8,0.2)', borderLeft: '3px solid #eab308', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
           <div className="flex items-start gap-2">
-            <span style={{ fontSize: 16, color: '#eab308', flexShrink: 0, marginTop: 1 }}>&#9888;</span>
+            <AlertTriangle size={15} strokeWidth={1.8} color="#eab308" style={{ flexShrink: 0, marginTop: 1 }} />
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-baseline mb-1">
-                <div className="font-graduate font-semibold" style={{ fontSize: 12, color: '#eab308' }}>CAUTION</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#eab308' }}>CAUTION</div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
               </div>
               <div style={{ fontSize: 12, color: 'rgba(234,179,8,0.8)' }}>Altitude constraint active — VNAV limiting descent</div>
@@ -1191,10 +1178,10 @@ function MessagesTab({
 
       <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', borderLeft: '3px solid rgba(34,211,238,0.3)', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
         <div className="flex items-start gap-2">
-          <span style={{ fontSize: 16, color: '#22d3ee', flexShrink: 0, marginTop: 1 }}>&#8505;</span>
+          <Info size={15} strokeWidth={1.8} color="#22d3ee" style={{ flexShrink: 0, marginTop: 1 }} />
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-baseline mb-1">
-              <div className="font-graduate font-semibold" style={{ fontSize: 12, color: '#22d3ee' }}>ADVISORY</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#22d3ee' }}>ADVISORY</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
             </div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Approaching 10,000 ft — speed restriction 250 KIAS</div>
@@ -1204,10 +1191,10 @@ function MessagesTab({
 
       <div style={{ background: 'rgba(52,211,153,0.03)', border: '1px solid rgba(52,211,153,0.1)', borderLeft: '3px solid rgba(52,211,153,0.4)', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
         <div className="flex items-start gap-2">
-          <span style={{ fontSize: 16, color: '#34d399', flexShrink: 0, marginTop: 1 }}>&#10003;</span>
+          <CheckCircle size={15} strokeWidth={1.8} color="#34d399" style={{ flexShrink: 0, marginTop: 1 }} />
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-baseline mb-1">
-              <div className="font-graduate font-semibold" style={{ fontSize: 12, color: '#34d399' }}>STATUS</div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: '#34d399' }}>STATUS</div>
               <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
             </div>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Autopilot engaged — all systems normal</div>
@@ -1218,10 +1205,10 @@ function MessagesTab({
       {scenarioStatus === 'resolved' && (
         <div style={{ background: 'rgba(52,211,153,0.03)', border: '1px solid rgba(52,211,153,0.12)', borderLeft: '3px solid #34d399', borderRadius: 8, padding: '10px 12px 10px 10px' }}>
           <div className="flex items-start gap-2">
-            <span style={{ fontSize: 16, color: '#34d399', flexShrink: 0, marginTop: 1 }}>&#10003;</span>
+            <CheckCircle size={15} strokeWidth={1.8} color="#34d399" style={{ flexShrink: 0, marginTop: 1 }} />
             <div className="flex-1 min-w-0">
               <div className="flex justify-between items-baseline mb-1">
-                <div className="font-graduate font-semibold" style={{ fontSize: 12, color: '#34d399' }}>RESOLVED</div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: '#34d399' }}>RESOLVED</div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>{ts}</div>
               </div>
               <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)' }}>Automation conflict resolved — descending to assigned altitude</div>

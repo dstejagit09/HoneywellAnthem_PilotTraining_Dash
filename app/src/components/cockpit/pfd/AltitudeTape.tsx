@@ -97,8 +97,8 @@ export function AltitudeTape({
 
   return (
     <div
-      className="absolute right-2 top-1/2 -translate-y-1/2 z-20"
-      style={{ width: RENDER_W }}
+      className="absolute top-1/2 -translate-y-1/2 z-20"
+      style={{ width: RENDER_W, right: 14 }}
     >
       {/* Up / Down altitude adjust buttons — overlaid on the top cap */}
       <button

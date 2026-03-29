@@ -1,6 +1,6 @@
 // Status bar with degradation badges — restyled with Graduate font and PFD palette.
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useCockpitStore } from '@/stores/cockpit-store';
 import { useScenarioStore } from '@/stores/scenario-store';
 import { useVoiceStore } from '@/stores/voice-store';
@@ -68,66 +68,67 @@ export function StatusBar() {
 
   const divider = <div className="w-px h-4 shrink-0" style={{ backgroundColor: 'rgba(255,255,255,0.06)' }} />;
 
+  const textBase: React.CSSProperties = {
+    fontFamily: "'Inter', system-ui, sans-serif",
+    fontSize: 12,
+    fontWeight: 500,
+  };
+
   return (
     <footer
-      className="flex items-center justify-between px-4 text-[14px]"
+      className="flex items-center justify-between px-4"
       style={{ height: 38, backgroundColor: 'rgba(6,16,26,0.88)', borderTop: '1px solid rgba(255,255,255,0.06)' }}
     >
-      <div className="flex items-center gap-[18px]">
-        <span className="font-graduate font-medium text-white/75">{utc}</span>
+      {/* Left zone — clock · frequency · pilot */}
+      <div className="flex items-center gap-[14px]">
+        <span style={{ ...textBase, color: 'rgba(255,255,255,0.6)' }}>{utc}</span>
         {divider}
-        <span className="font-graduate font-semibold" style={{ color: '#22d3ee' }}>
+        <span style={{ ...textBase, fontWeight: 600, color: '#22d3ee' }}>
           {activeFrequency.value.toFixed(3)}
         </span>
-        <span className="font-graduate font-medium text-white/50">{activeFrequency.label}</span>
+        <span style={{ ...textBase, color: 'rgba(255,255,255,0.4)' }}>{activeFrequency.label}</span>
         {activePilot && (
           <>
             {divider}
-            <span className="font-graduate font-medium text-white/75">
+            <span style={{ ...textBase, color: 'rgba(255,255,255,0.6)' }}>
               {activePilot.name}
             </span>
           </>
         )}
       </div>
 
-      <div className="flex items-center gap-[18px]">
-        {/* Degradation badges */}
+      {/* Center zone — degradation badges */}
+      <div className="flex items-center gap-[10px]">
         {!hasLiveKitUrl && <DegradationBadge label="Voice Unavailable" color="amber" />}
         {!hasSupabase && <DegradationBadge label="Offline Mode" color="amber" />}
-
-        {/* Calibration status */}
         {showCalibration && calibrationLabel && (
-          <span
-            className={[
-              'font-graduate font-semibold',
-              baseline?.isCalibrated ? 'text-[#34d399]' : 'text-anthem-amber',
-            ].join(' ')}
-          >
+          <span style={{
+            ...textBase,
+            fontWeight: 600,
+            color: baseline?.isCalibrated ? '#34d399' : '#f59e0b',
+          }}>
             {calibrationLabel}
           </span>
         )}
+      </div>
 
-        {divider}
-
+      {/* Right zone — drill state · connectivity */}
+      <div className="flex items-center gap-[14px]">
         {drillPhase !== 'idle' && activeDrill ? (
           <span className="flex items-center gap-1.5">
             <span className="inline-block w-2 h-2 rounded-full bg-[#34d399] animate-pulse" />
-            <span className="font-graduate font-medium text-[#34d399]">
-              {activeDrill.title}
-            </span>
+            <span style={{ ...textBase, color: '#34d399' }}>{activeDrill.title}</span>
           </span>
         ) : (
-          <span className="text-white/40 font-graduate font-medium">No Active Drill</span>
+          <span style={{ ...textBase, color: 'rgba(255,255,255,0.35)' }}>No Active Drill</span>
         )}
         {divider}
         <span className="flex items-center gap-1.5">
           <span
-            className={[
-              'inline-block w-2 h-2 rounded-full',
-              livekitConnected ? 'bg-[#34d399]' : 'bg-white/30',
-            ].join(' ')}
+            className="inline-block w-2 h-2 rounded-full"
+            style={{ backgroundColor: livekitConnected ? '#34d399' : 'rgba(255,255,255,0.25)' }}
           />
-          <span className="text-white/50 font-graduate font-medium">
+          <span style={{ ...textBase, color: 'rgba(255,255,255,0.45)' }}>
             {livekitConnected ? 'Connected' : 'Offline'}
           </span>
         </span>
