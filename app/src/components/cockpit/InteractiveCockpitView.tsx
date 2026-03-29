@@ -105,7 +105,7 @@ export function InteractiveCockpitView({
       {/* Main display area */}
       <div className="flex-1 flex overflow-hidden relative">
         {/* Primary Flight Display (left) */}
-        <InteractivePFD onModeChange={handleModeChange} />
+        <InteractivePFD />
 
         {/* Resize handle */}
         <ResizeHandle onDrag={handleDrag} />

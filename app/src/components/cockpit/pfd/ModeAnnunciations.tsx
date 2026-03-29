@@ -1,5 +1,4 @@
-// Mode annunciations — mode/status pills, VNAV constraint warning, V/S button.
-// Cleaned up: removed descent badge for less clutter.
+// Mode annunciations — mode/status pills, VNAV constraint warning.
 
 import type { CockpitMode } from '@/types';
 
@@ -10,7 +9,6 @@ interface ModeAnnunciationsProps {
   vnavConstraint: number;
   desiredAltitude: number;
   isDescending: boolean;
-  onVSClick: () => void;
 }
 
 export function ModeAnnunciations({
@@ -19,7 +17,6 @@ export function ModeAnnunciations({
   selectedMode,
   vnavConstraint,
   desiredAltitude,
-  onVSClick,
 }: ModeAnnunciationsProps) {
   return (
     <>
@@ -68,24 +65,6 @@ export function ModeAnnunciations({
         </div>
       )}
 
-      {/* V/S mode button (bottom left) */}
-      <div className="absolute bottom-4 left-3 z-30">
-        <button
-          onClick={onVSClick}
-          className="px-3 py-1.5 text-xs font-bold rounded border transition-all shadow font-graduate"
-          style={
-            selectedMode === 'VS'
-              ? { backgroundColor: '#0d7377', color: '#fff', borderColor: '#0d7377' }
-              : {
-                  backgroundColor: 'rgba(6,16,26,0.7)',
-                  color: '#5eead4',
-                  borderColor: 'rgba(13,115,119,0.4)',
-                }
-          }
-        >
-          V/S
-        </button>
-      </div>
     </>
   );
 }

@@ -90,26 +90,44 @@ export function InlineFrequencyNumpad({
   const parsedValue = parseFloat(value);
   const isValidEntry = !isNaN(parsedValue) && isValidComFrequency(parsedValue);
 
-  const pendingBorder = isPending
-    ? 'border-cyan-400 animate-pulse shadow-lg shadow-cyan-500/30'
-    : 'border-cyan-700/50';
+  const pendingBorderStyle = isPending
+    ? { borderTopColor: '#22d3ee' }
+    : { borderTopColor: 'rgba(13,115,119,0.4)' };
+
+  const baseStyle = {
+    background: 'rgba(6,16,26,0.98)',
+    borderTop: '2px solid',
+    ...pendingBorderStyle,
+  };
+
+  const numBtnStyle = {
+    minHeight: 40,
+    borderRadius: 6,
+    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'rgba(255,255,255,0.04)',
+    color: 'rgba(255,255,255,0.75)',
+    fontSize: 15,
+    fontFamily: "'JetBrains Mono', 'Consolas', monospace",
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'background 0.12s',
+    cursor: 'pointer',
+  };
 
   // Collapsed view
   if (collapsed) {
     return (
-      <div
-        className={`bg-gradient-to-b from-[#1a2736] to-[#151f2b] border-t-2 ${pendingBorder} p-3 cursor-pointer`}
-        onClick={toggleCollapse}
-      >
+      <div style={{ ...baseStyle, padding: '10px 12px', cursor: 'pointer' }} onClick={toggleCollapse}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-cyan-400 text-xs font-mono tracking-widest uppercase">
+            <span className="font-graduate uppercase" style={{ fontSize: 11, color: '#22d3ee', letterSpacing: '0.08em' }}>
               Numpad
             </span>
-            <span className="text-cyan-400/50 text-xs">&#9660;</span>
+            <span style={{ color: 'rgba(34,211,238,0.4)', fontSize: 10 }}>&#9660;</span>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-cyan-300 font-mono text-sm">
+            <span className="font-graduate" style={{ color: '#22d3ee', fontSize: 13 }}>
               {standbyFrequency.value.toFixed(3)} MHz
             </span>
             {isPending && pendingActionType === 'swap_frequencies' && (
@@ -118,7 +136,17 @@ export function InlineFrequencyNumpad({
                   e.stopPropagation();
                   handleSwap();
                 }}
-                className="px-3 py-1 rounded bg-green-600/20 border border-green-500/50 text-green-300 font-bold text-xs hover:bg-green-600/30 transition-colors min-h-[32px]"
+                className="font-graduate font-bold"
+                style={{
+                  padding: '4px 12px',
+                  borderRadius: 6,
+                  border: '1px solid rgba(13,115,119,0.6)',
+                  background: 'rgba(13,115,119,0.25)',
+                  color: '#22d3ee',
+                  fontSize: 12,
+                  minHeight: 32,
+                  cursor: 'pointer',
+                }}
               >
                 SWAP &#8644;
               </button>
@@ -131,41 +159,60 @@ export function InlineFrequencyNumpad({
 
   // Expanded view
   return (
-    <div
-      className={`bg-gradient-to-b from-[#1a2736] to-[#151f2b] border-t-2 ${pendingBorder} p-3`}
-    >
+    <div style={{ ...baseStyle, padding: '10px 12px' }}>
       {/* Header with collapse toggle */}
       <div
         className="flex items-center justify-between mb-2 cursor-pointer"
         onClick={toggleCollapse}
       >
         <div className="flex items-center gap-2">
-          <span className="text-cyan-400 text-xs font-mono tracking-widest uppercase">
+          <span className="font-graduate uppercase" style={{ fontSize: 11, color: '#22d3ee', letterSpacing: '0.08em' }}>
             Frequency
           </span>
-          <span className="text-cyan-400/50 text-xs">&#9650;</span>
+          <span style={{ color: 'rgba(34,211,238,0.4)', fontSize: 10 }}>&#9650;</span>
         </div>
         {instructionText && isPending && (
-          <span className="text-amber-300 text-[10px] font-mono truncate ml-2 max-w-[60%]">
+          <span className="font-graduate truncate ml-2" style={{ fontSize: 10, color: 'rgba(252,211,77,0.85)', maxWidth: '60%' }}>
             {instructionText}
           </span>
         )}
       </div>
 
       {/* Frequency display field */}
-      <div className="mb-2 flex items-center gap-1 px-2 py-1.5 rounded bg-slate-900/60 border border-cyan-600/40">
-        <span className="text-lg font-mono text-cyan-300 flex-1 min-h-[28px]">
+      <div
+        className="mb-2 flex items-center gap-1"
+        style={{
+          padding: '6px 10px',
+          borderRadius: 6,
+          background: 'rgba(0,0,0,0.4)',
+          border: '1px solid rgba(13,115,119,0.35)',
+        }}
+      >
+        <span
+          className="font-graduate flex-1"
+          style={{ fontSize: 18, color: '#22d3ee', minHeight: 28 }}
+        >
           {value || (
-            <span className="text-cyan-600/40">
-              {targetFrequencyHint
-                ? targetFrequencyHint.toFixed(3)
-                : '----.---'}
+            <span style={{ color: 'rgba(34,211,238,0.25)' }}>
+              {targetFrequencyHint ? targetFrequencyHint.toFixed(3) : '----.---'}
             </span>
           )}
         </span>
         <button
           onClick={handleBackspace}
-          className="w-8 h-8 rounded bg-slate-800/60 border border-slate-600/40 text-cyan-400/70 text-sm hover:bg-slate-700/60 hover:text-cyan-300 transition-colors flex items-center justify-center"
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 5,
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(255,255,255,0.04)',
+            color: 'rgba(255,255,255,0.4)',
+            fontSize: 14,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
           &#9003;
         </button>
@@ -178,7 +225,17 @@ export function InlineFrequencyNumpad({
             <button
               key={freq.value}
               onClick={() => handleSuggestionTap(freq)}
-              className="shrink-0 px-2 py-1 rounded bg-cyan-950/40 border border-cyan-600/30 text-cyan-300 text-[10px] font-mono hover:bg-cyan-900/40 hover:border-cyan-500/50 transition-colors"
+              className="shrink-0 font-graduate"
+              style={{
+                padding: '3px 8px',
+                borderRadius: 5,
+                border: '1px solid rgba(13,115,119,0.4)',
+                background: 'rgba(13,115,119,0.1)',
+                color: '#22d3ee',
+                fontSize: 10,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+              }}
             >
               {freq.label} {freq.value.toFixed(3)}
             </button>
@@ -187,12 +244,22 @@ export function InlineFrequencyNumpad({
       )}
 
       {/* Digit grid — 4 rows x 3 columns */}
-      <div className="grid grid-cols-3 gap-1 mb-2">
+      <div className="grid grid-cols-3 mb-2" style={{ gap: 6 }}>
         {KEYS.map((key) => (
           <button
             key={key}
             onClick={() => handleKey(key)}
-            className="min-h-[40px] rounded border border-slate-600/50 bg-slate-800/50 text-cyan-200 text-base font-mono hover:bg-slate-700/60 hover:border-cyan-500/40 active:scale-[0.97] transition-all flex items-center justify-center"
+            className="font-graduate active:scale-[0.97]"
+            style={{
+              ...numBtnStyle,
+              ...(key === 'CLR'
+                ? {
+                    color: 'rgba(252,176,69,0.85)',
+                    border: '1px solid rgba(252,176,69,0.2)',
+                    background: 'rgba(252,176,69,0.06)',
+                  }
+                : {}),
+            }}
           >
             {key}
           </button>
@@ -203,24 +270,51 @@ export function InlineFrequencyNumpad({
       <div className="flex gap-2">
         <button
           onClick={handleSwap}
-          className={`flex-1 min-h-[40px] rounded border font-bold text-xs transition-all flex items-center justify-center gap-1 ${
-            isPending && pendingActionType === 'swap_frequencies'
-              ? 'bg-green-600/30 border-green-400 text-green-300 animate-pulse hover:bg-green-600/40'
-              : 'bg-green-600/10 border-green-600/40 text-green-400/70 hover:bg-green-600/20 hover:border-green-500/50'
-          }`}
+          className="font-graduate font-bold"
+          style={{
+            flex: 1,
+            minHeight: 40,
+            borderRadius: 6,
+            border: isPending && pendingActionType === 'swap_frequencies'
+              ? '1px solid rgba(13,115,119,0.7)'
+              : '1px solid rgba(13,115,119,0.35)',
+            background: isPending && pendingActionType === 'swap_frequencies'
+              ? 'rgba(13,115,119,0.3)'
+              : 'rgba(13,115,119,0.1)',
+            color: '#22d3ee',
+            fontSize: 12,
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 4,
+          }}
         >
           SWAP &#8644;
         </button>
         <button
           onClick={handleConfirm}
           disabled={!isValidEntry}
-          className={`flex-1 min-h-[40px] rounded border font-bold text-xs transition-all flex items-center justify-center ${
-            isValidEntry
-              ? 'bg-cyan-600/20 border-cyan-500/50 text-cyan-300 hover:bg-cyan-600/30'
-              : 'bg-slate-800/30 border-slate-600/30 text-slate-500 cursor-not-allowed'
-          }`}
+          className="font-graduate font-bold"
+          style={{
+            flex: 1,
+            minHeight: 40,
+            borderRadius: 6,
+            border: isValidEntry
+              ? '1px solid rgba(13,115,119,0.7)'
+              : '1px solid rgba(255,255,255,0.06)',
+            background: isValidEntry
+              ? '#0d7377'
+              : 'rgba(255,255,255,0.03)',
+            color: isValidEntry ? '#fff' : 'rgba(255,255,255,0.2)',
+            fontSize: 12,
+            cursor: isValidEntry ? 'pointer' : 'not-allowed',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
         >
-          Confirm
+          CONFIRM
         </button>
       </div>
     </div>
