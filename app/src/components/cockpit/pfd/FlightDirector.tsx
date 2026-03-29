@@ -32,7 +32,8 @@ export function FlightDirector({ isDescending }: FlightDirectorProps) {
         const offset = -deg * PX_PER_DEG; // positive pitch = upward on screen
         const isHorizon = deg === 0;
         const isMajor = Math.abs(deg) >= 10;
-        const opacity = isHorizon ? 0.55 : isMajor ? 0.55 : 0.4;
+        const opacity = isHorizon ? 0.55 : isMajor ? 0.6 : 0.45;
+        const barH = isMajor ? 3 : 2;
 
         return (
           <div
@@ -52,7 +53,7 @@ export function FlightDirector({ isDescending }: FlightDirectorProps) {
                 fontFamily: FONT_MONO,
                 fontSize: 11,
                 fontWeight: 400,
-                color: 'rgba(255,255,255,0.5)',
+                color: 'rgba(255,255,255,0.55)',
                 width: 22,
                 textAlign: 'right',
                 userSelect: 'none',
@@ -65,7 +66,7 @@ export function FlightDirector({ isDescending }: FlightDirectorProps) {
             {/* Bar */}
             <div style={{
               width,
-              height: 2,
+              height: barH,
               backgroundColor: `rgba(255,255,255,${opacity})`,
               borderRadius: 1,
             }} />
@@ -76,7 +77,7 @@ export function FlightDirector({ isDescending }: FlightDirectorProps) {
                 fontFamily: FONT_MONO,
                 fontSize: 11,
                 fontWeight: 400,
-                color: 'rgba(255,255,255,0.5)',
+                color: 'rgba(255,255,255,0.55)',
                 width: 22,
                 userSelect: 'none',
               }}>

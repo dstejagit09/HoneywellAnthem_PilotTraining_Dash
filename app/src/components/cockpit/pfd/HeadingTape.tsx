@@ -64,9 +64,9 @@ function MiniCompass({ heading }: { heading: number }) {
                 textAnchor="middle"
                 dominantBaseline="central"
                 fontFamily={FONT_UI}
-                fontSize={isN ? 13 : 12}
+                fontSize={isN ? 14 : 13}
                 fontWeight={isN ? 700 : 600}
-                fill={isN ? '#22d3ee' : 'rgba(255,255,255,0.7)'}
+                fill={isN ? '#22d3ee' : 'rgba(255,255,255,0.75)'}
               >
                 {label}
               </text>
@@ -93,7 +93,7 @@ function MiniCompass({ heading }: { heading: number }) {
       </g>
 
       {/* Aircraft symbol (fixed) — simple HSI silhouette */}
-      <g stroke="rgba(255,255,255,0.7)" strokeWidth={1.5} fill="none" strokeLinecap="round">
+      <g stroke="rgba(255,255,255,0.75)" strokeWidth={1.5} fill="none" strokeLinecap="round">
         {/* Fuselage */}
         <line x1={CX} y1={CY - 16} x2={CX} y2={CY + 14} />
         {/* Wings */}
@@ -222,21 +222,22 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
         {/* Ticks and labels */}
         {ticks.map(({ x, normalD, angDist, isMajor10, label, isCardinal }) => {
           if (isCardinal) {
+            const isNorthCardinal = normalD === 0;
             return (
               <g key={normalD}>
                 <line
-                  x1={x} y1={0} x2={x} y2={12}
-                  stroke="rgba(13,115,119,0.5)"
-                  strokeWidth={1.5}
+                  x1={x} y1={0} x2={x} y2={isNorthCardinal ? 16 : 12}
+                  stroke={isNorthCardinal ? '#22d3ee' : 'rgba(255,255,255,0.4)'}
+                  strokeWidth={isNorthCardinal ? 2 : 1.5}
                 />
                 {label && (
                   <text
                     x={x} y={TAPE_H - 2}
                     textAnchor="middle"
                     fontFamily={FONT_UI}
-                    fontSize={11}
-                    fontWeight={600}
-                    fill="rgba(13,115,119,0.7)"
+                    fontSize={isNorthCardinal ? 14 : 13}
+                    fontWeight={isNorthCardinal ? 700 : 600}
+                    fill={isNorthCardinal ? '#22d3ee' : 'rgba(255,255,255,0.55)'}
                   >
                     {label}
                   </text>
@@ -248,11 +249,11 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
           // Distance-based opacity for non-cardinal ticks
           const tickH    = angDist <= 10 ? 10 : angDist <= 20 ? 9 : 7;
           const tickStroke = angDist <= 10
-            ? 'rgba(255,255,255,0.25)'
+            ? 'rgba(255,255,255,0.4)'
             : angDist <= 20
-              ? 'rgba(255,255,255,0.2)'
-              : 'rgba(255,255,255,0.15)';
-          const tickW = isMajor10 ? 1 : 0.5;
+              ? 'rgba(255,255,255,0.3)'
+              : 'rgba(255,255,255,0.2)';
+          const tickW = isMajor10 ? 1.5 : 0.75;
 
           const labelFill = angDist <= 10
             ? 'rgba(255,255,255,0.65)'
@@ -285,7 +286,7 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
       </svg>
 
       {/* Mini compass */}
-      <div style={{ marginTop: 8 }}>
+      <div style={{ marginTop: 6 }}>
         <MiniCompass heading={heading} />
       </div>
     </div>
