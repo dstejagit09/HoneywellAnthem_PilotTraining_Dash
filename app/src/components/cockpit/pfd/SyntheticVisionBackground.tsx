@@ -80,13 +80,13 @@ export function SyntheticVisionBackground({
               <polygon
                 points="300,300 250,420 350,420"
                 fill="none"
-                stroke="rgba(0,255,255,0.45)"
+                stroke="rgba(34,211,238,0.45)"
                 strokeWidth="2"
               />
               <polygon
                 points="300,250 215,480 385,480"
                 fill="none"
-                stroke="rgba(0,255,255,0.25)"
+                stroke="rgba(34,211,238,0.25)"
                 strokeWidth="2"
               />
             </svg>
@@ -99,13 +99,13 @@ export function SyntheticVisionBackground({
             <svg viewBox="0 0 600 600" className="w-[52%] h-[52%] opacity-75">
               <polygon
                 points="300,420 255,560 345,560"
-                fill="rgba(255,255,255,0.08)"
-                stroke="rgba(255,255,255,0.28)"
+                fill="rgba(34,211,238,0.06)"
+                stroke="rgba(34,211,238,0.28)"
                 strokeWidth="2"
               />
               <line
                 x1="300" y1="430" x2="300" y2="550"
-                stroke="rgba(255,255,255,0.28)"
+                stroke="rgba(34,211,238,0.28)"
                 strokeWidth="2"
               />
             </svg>
