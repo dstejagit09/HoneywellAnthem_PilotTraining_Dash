@@ -9,6 +9,7 @@ import { useScenarioStore } from '@/stores/scenario-store';
 import { useAssessmentStore } from '@/stores/assessment-store';
 import { useVoiceStore } from '@/stores/voice-store';
 import { useDrillRunner } from '@/hooks/useDrillRunner';
+import { startDrill as runnerStartDrill } from '@/services/scenario-runner';
 import { useATCEngine } from '@/hooks/useATCEngine';
 import { PilotSelector } from '@/components/shared/PilotSelector';
 import { DrillTimer } from '@/components/drill/DrillTimer';
@@ -66,7 +67,7 @@ export function InteractiveMFD({
     ? (currentEvent as CockpitActionEvent)
     : null;
 
-  // Track whether the frequency action was completed (for RadiosTab to show Continue)
+  // Track whether the frequency action was completed (for auto-advance)
   const [freqActionDone, setFreqActionDone] = useState<{
     success: boolean;
     details: Record<string, unknown>;
@@ -431,9 +432,6 @@ function TrainingSection({
   const [expandedDrillId, setExpandedDrillId] = useState<string | null>(null);
 
   const drills = useScenarioStore((s) => s.availableDrills);
-  const selectDrill = useScenarioStore((s) => s.selectDrill);
-  const drillStartDrill = useScenarioStore((s) => s.startDrill);
-  const resetDrill = useScenarioStore((s) => s.reset);
 
   // Idle — show Start Drill button and drill list
   if (phase === 'idle') {
@@ -483,7 +481,7 @@ function TrainingSection({
                       setExpandedDrillId(expandedDrillId === drill.id ? null : drill.id)
                     }
                     onStart={() => {
-                      selectDrill(drill.id);
+                      runnerStartDrill(drill.id);
                       setShowDrillList(false);
                       setExpandedDrillId(null);
                     }}
@@ -493,56 +491,6 @@ function TrainingSection({
             )}
           </div>
         )}
-      </div>
-    );
-  }
-
-  // Briefing — compact briefing with Begin/Cancel
-  if (phase === 'briefing' && activeDrill) {
-    return (
-      <div className="rounded-lg" style={{ background: 'rgba(13,115,119,0.08)', border: '1px solid rgba(13,115,119,0.25)', padding: '14px 16px' }}>
-        <div className="font-graduate font-semibold mb-2" style={{ fontSize: 14, color: '#22d3ee', letterSpacing: '0.06em' }}>BRIEFING</div>
-        <div className="font-semibold mb-1" style={{ fontSize: 13, color: '#e0e8ec' }}>{activeDrill.title}</div>
-        <p className="mb-3" style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{activeDrill.description}</p>
-        <div className="flex items-center gap-2 mb-3 flex-wrap">
-          <span
-            className="font-graduate font-bold uppercase"
-            style={{
-              fontSize: 10,
-              padding: '2px 8px',
-              borderRadius: 4,
-              border: `1px solid ${DIFFICULTY_COLORS[activeDrill.difficulty]?.border ?? 'rgba(255,255,255,0.2)'}`,
-              color: DIFFICULTY_COLORS[activeDrill.difficulty]?.color ?? 'rgba(255,255,255,0.5)',
-              background: DIFFICULTY_COLORS[activeDrill.difficulty]?.bg ?? 'transparent',
-              minWidth: 72,
-              textAlign: 'center',
-            }}
-          >
-            {activeDrill.difficulty}
-          </span>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{activeDrill.events.length} events</span>
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{Math.ceil(activeDrill.duration / 60)} min</span>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={drillStartDrill}
-            className="flex-1 transition-all active:scale-[0.98] min-h-[44px]"
-            style={{ background: '#0d7377', color: '#fff', fontSize: 13, fontWeight: 600, padding: '10px 20px', borderRadius: 6, border: 'none', cursor: 'pointer' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0f8b8f'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.background = '#0d7377'; }}
-          >
-            Begin Drill
-          </button>
-          <button
-            onClick={resetDrill}
-            className="transition-colors min-h-[44px]"
-            style={{ padding: '10px 14px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 13, cursor: 'pointer' }}
-            onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.7)'; }}
-            onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.4)'; }}
-          >
-            Cancel
-          </button>
-        </div>
       </div>
     );
   }
@@ -701,46 +649,14 @@ function RadiosTab({
   } = useDrillRunner();
 
   const livekitConnected = useVoiceStore((s) => s.livekitConnected);
+  const handleKeyboardReadback = useScenarioStore((s) => s.handleKeyboardReadback);
   const { speakATCInstruction } = useATCEngine();
 
   const [contactAccepted, setContactAccepted] = useState(false);
   const atcSpokenRef = useRef<number>(-1);
   const freqActionStartRef = useRef<number>(0);
   const freqResultRecordedRef = useRef(false);
-  const readbackCountAtEventStartRef = useRef(0);
-
-  // Reset contactAccepted when event changes; snapshot readback count for ATC events
-  useEffect(() => {
-    setContactAccepted(false);
-    freqResultRecordedRef.current = false;
-    readbackCountAtEventStartRef.current =
-      useAssessmentStore.getState().currentDrillMetrics?.readbackScores.length ?? 0;
-  }, [currentEventIndex]);
-
-  // Track start time for frequency cockpit_action events
-  useEffect(() => {
-    if (freqActionEvent) {
-      freqActionStartRef.current = Date.now();
-    }
-  }, [freqActionEvent]);
-
-  // Auto-record when frequency action is completed by the numpad (once only)
-  useEffect(() => {
-    if (freqActionDone && freqActionEvent && !freqResultRecordedRef.current) {
-      freqResultRecordedRef.current = true;
-      const timeToComplete = Date.now() - freqActionStartRef.current;
-      recordResult({
-        eventType: 'cockpit_action',
-        success: freqActionDone.success,
-        details: {
-          ...freqActionDone.details,
-          timeToComplete,
-          timedOut: false,
-        },
-      });
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [freqActionDone]);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isATCEvent =
     (phase === 'active' || phase === 'decision') &&
@@ -752,15 +668,15 @@ function RadiosTab({
   const totalEvents = activeDrill?.events.length ?? 0;
   const isLastEvent = currentEventIndex >= totalEvents - 1;
 
-  const handleAdvanceOrComplete = () => {
+  const handleAdvanceOrComplete = useCallback(() => {
     if (isLastEvent) {
       complete();
     } else {
       advance();
     }
-  };
+  }, [isLastEvent, complete, advance]);
 
-  const handleAcceptContact = () => {
+  const handleAcceptContact = useCallback(() => {
     if (!atcEvent) return;
     setContactAccepted(true);
 
@@ -771,7 +687,42 @@ function RadiosTab({
         console.error('[RadiosTab] speakATCInstruction failed:', err),
       );
     }
-  };
+  }, [atcEvent, livekitConnected, currentEventIndex, speakATCInstruction]);
+
+  // Auto-advance for ATC readback is handled headlessly by scenario-store's
+  // setReadbackReceived(). No useEffect here — the store owns the entire
+  // readback → verification → advance flow. See feedback_headless_evaluation.md.
+
+  // Reset state when event changes
+  // Reset state when event changes
+  useEffect(() => {
+    setContactAccepted(false);
+    if (autoAdvanceTimerRef.current) { clearTimeout(autoAdvanceTimerRef.current); autoAdvanceTimerRef.current = null; }
+  }, [currentEventIndex]);
+
+  // Auto-advance after frequency action is completed
+  const freqAutoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (freqActionDone && freqActionEvent && !freqResultRecordedRef.current) {
+      freqResultRecordedRef.current = true;
+      const elapsed = Date.now() - freqActionStartRef.current;
+      recordResult({
+        eventType: 'cockpit_action',
+        success: freqActionDone.success,
+        details: {
+          ...freqActionDone.details,
+          timeToComplete: elapsed,
+        },
+      });
+      // Brief delay so pilot sees the success/failure feedback
+      freqAutoAdvanceRef.current = setTimeout(() => {
+        handleAdvanceOrComplete();
+      }, 1500);
+    }
+    return () => {
+      if (freqAutoAdvanceRef.current) clearTimeout(freqAutoAdvanceRef.current);
+    };
+  }, [freqActionDone, freqActionEvent, recordResult, handleAdvanceOrComplete]);
 
   // Timeout handling for frequency cockpit_action events
   const [timedOut, setTimedOut] = useState(false);
@@ -879,36 +830,7 @@ function RadiosTab({
             </div>
           )}
 
-          {/* Continue / Skip buttons */}
-          <div className="flex gap-2">
-            {freqActionDone ? (
-              <button
-                onClick={handleAdvanceOrComplete}
-                className="flex-1 py-3 rounded-lg bg-cyan-600/20 border border-cyan-500/50 text-cyan-300 font-bold text-sm hover:bg-cyan-600/30 transition-colors min-h-[44px]"
-              >
-                Continue
-              </button>
-            ) : (
-              <button
-                onClick={() => {
-                  recordResult({
-                    eventType: 'cockpit_action',
-                    success: false,
-                    details: {
-                      mode: 'interactive-numpad',
-                      action: freqActionEvent.expectedAction,
-                      timedOut: false,
-                      skipped: true,
-                    },
-                  });
-                  handleAdvanceOrComplete();
-                }}
-                className="py-3 px-4 rounded-lg bg-red-600/20 border border-red-500/50 text-red-300 font-bold text-xs hover:bg-red-600/30 transition-colors min-h-[44px]"
-              >
-                Skip
-              </button>
-            )}
-          </div>
+          {/* Auto-advances after completion — no manual button needed */}
         </div>
       )}
 
@@ -966,67 +888,24 @@ function RadiosTab({
             <TranscriptDisplay />
           </div>
 
-          {/* PTT button or keyboard fallback */}
-          <div className="shrink-0">
-            {livekitConnected ? (
-              <PTTButton />
-            ) : (
-              <div className="flex gap-2">
-                <button
-                  onClick={() => {
-                    recordResult({
-                      eventType: 'atc_instruction',
-                      success: true,
-                      details: { mode: 'keyboard-fallback' },
-                    });
-                    handleAdvanceOrComplete();
-                  }}
-                  className="flex-1 py-3 rounded-lg bg-green-600/20 border border-green-500/50 text-green-300 font-bold text-xs hover:bg-green-600/30 transition-colors min-h-[44px]"
-                >
-                  Readback Correct
-                </button>
-                <button
-                  onClick={() => {
-                    recordResult({
-                      eventType: 'atc_instruction',
-                      success: false,
-                      details: { mode: 'keyboard-fallback' },
-                    });
-                    handleAdvanceOrComplete();
-                  }}
-                  className="py-3 px-4 rounded-lg bg-red-600/20 border border-red-500/50 text-red-300 font-bold text-xs hover:bg-red-600/30 transition-colors min-h-[44px]"
-                >
-                  Skip
-                </button>
-              </div>
-            )}
+          {/* PTT button (when connected) + keyboard fallback (always available) */}
+          <div className="shrink-0 space-y-2">
+            {livekitConnected && <PTTButton />}
+            <div className="flex gap-2">
+              <button
+                onClick={() => { console.log('🟣 [InteractiveMFD] Readback Correct clicked'); handleKeyboardReadback(true); }}
+                className="flex-1 py-2 rounded-lg bg-green-600/20 border border-green-500/50 text-green-300 font-bold text-xs hover:bg-green-600/30 transition-colors min-h-[36px]"
+              >
+                Readback Correct
+              </button>
+              <button
+                onClick={() => { console.log('🟣 [InteractiveMFD] Skip clicked'); handleKeyboardReadback(false); }}
+                className="py-2 px-4 rounded-lg bg-red-600/20 border border-red-500/50 text-red-300 font-bold text-xs hover:bg-red-600/30 transition-colors min-h-[36px]"
+              >
+                Skip
+              </button>
+            </div>
           </div>
-
-          {/* Continue button — only shown for voice path (keyboard fallback buttons handle their own advance) */}
-          {livekitConnected && (
-            <button
-              onClick={() => {
-                // Record EventResult for voice-path ATC events
-                const currentReadbacks =
-                  useAssessmentStore.getState().currentDrillMetrics?.readbackScores.length ?? 0;
-                const receivedAssessment = currentReadbacks > readbackCountAtEventStartRef.current;
-                const latestReadback = receivedAssessment
-                  ? useAssessmentStore.getState().currentDrillMetrics?.readbackScores[currentReadbacks - 1]
-                  : null;
-                recordResult({
-                  eventType: 'atc_instruction',
-                  success: latestReadback
-                    ? latestReadback.confidenceAdjustedAccuracy >= 70
-                    : true,
-                  details: { mode: 'voice', receivedAssessment },
-                });
-                handleAdvanceOrComplete();
-              }}
-              className="w-full py-3 rounded-lg bg-cyan-600/20 border border-cyan-500/50 text-cyan-300 font-bold text-sm hover:bg-cyan-600/30 transition-colors min-h-[44px] shrink-0"
-            >
-              Continue
-            </button>
-          )}
         </div>
       )}
 

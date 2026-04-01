@@ -11,6 +11,7 @@ export type {
   DisplayEvent,
   PilotPredictEvent,
   FlightParameterEvent,
+  ConstraintViolation,
 } from './cockpit';
 
 export type {

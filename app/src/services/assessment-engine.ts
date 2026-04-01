@@ -132,6 +132,13 @@ export function processAssessmentResult(payload: AgentAssessmentPayload): void {
       criticalElements: [],
     };
     assessment.recordReadbackScore(readback);
+
+    // Signal readback completion for auto-advance during ATC instruction events
+    const scenario = useScenarioStore.getState();
+    const currentEvent = scenario.activeDrill?.events[scenario.currentEventIndex];
+    if (currentEvent?.type === 'atc_instruction') {
+      scenario.setReadbackReceived(true);
+    }
   }
 }
 

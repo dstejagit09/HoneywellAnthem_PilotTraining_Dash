@@ -13,7 +13,7 @@ export const descentConflict: DrillDefinition = {
     'Tests automation awareness, mode selection, and communication.',
   duration: 300,
   difficulty: 'intermediate',
-  competencies: ['SAW', 'PSD', 'COM', 'FPM'],
+  competencies: ['COM', 'FPM'],
   flightPlan: 'kjfk-kbos',
   initialState: {
     flightPlan: kjfkKbos,
@@ -34,30 +34,13 @@ export const descentConflict: DrillDefinition = {
       prompt:
         'Issue a descent clearance to the pilot. ' +
         'Clear them to descend and maintain 8,000 feet.',
-      expectedActions: [{ type: 'set_altitude', value: 8000 }],
+      expectedActions: [],
       keywords: ['eight thousand', '8000', 'descend', 'maintain'],
-    },
-    {
-      type: 'decision_point',
-      prompt:
-        'VNAV PATH is active but the aircraft is not descending below 11,000. ' +
-        'ATC has cleared you to 8,000. What do you do?',
-      options: [
-        { id: 'a', text: 'Wait for VNAV to resolve the constraint automatically' },
-        { id: 'b', text: 'Switch to FLCH or V/S mode to override the constraint' },
-        { id: 'c', text: 'Disengage autopilot and hand-fly the descent' },
-        { id: 'd', text: 'Request a different altitude from ATC' },
-      ],
-      correctOptionId: 'b',
-      timeLimitSeconds: 20,
     },
     {
       type: 'atc_instruction',
       prompt: 'Confirm that the pilot is descending to 8,000 feet.',
-      expectedActions: [
-        { type: 'set_altitude', value: 8000 },
-        { type: 'set_mode', value: 'FLCH' },
-      ],
+      expectedActions: [],
       keywords: ['eight thousand', '8000', 'descending', 'confirm'],
     },
     {
@@ -65,14 +48,7 @@ export const descentConflict: DrillDefinition = {
       description:
         'VNAV constraint at 11,000 prevents descent to 8,000. ' +
         'Switch to FLCH or V/S and set altitude to 8,000.',
-      initialCockpitOverrides: {
-        altitude: 14000,
-        desiredAltitude: 14000,
-        selectedMode: 'VNAV',
-        vnavConstraint: 11000,
-        autopilot: true,
-        autoThrottle: true,
-      },
+      initialCockpitOverrides: {},
       successConditions: [
         {
           field: 'selectedMode',

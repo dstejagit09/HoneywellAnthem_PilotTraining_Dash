@@ -5,7 +5,8 @@
 //   41-405: altitude pointer (152×122, stepped shape with inset shadow)
 //   39-352: scale value highlight box (76×24, left-pointing arrow)
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
+import { useCockpitStore } from '@/stores/cockpit-store';
 import { PFD } from './pfd-constants';
 
 interface AltitudeTapeProps {
@@ -55,6 +56,21 @@ export function AltitudeTape({
   vnavConstraint,
   onAdjustDesiredAltitude,
 }: AltitudeTapeProps) {
+  // Hostile UI: flash constraint line on violation (snap-back feedback)
+  const lastViolation = useCockpitStore((s) => s.lastConstraintViolation);
+  const clearViolation = useCockpitStore((s) => s.clearConstraintViolation);
+  const [flashing, setFlashing] = useState(false);
+
+  useEffect(() => {
+    if (!lastViolation) return;
+    setFlashing(true);
+    const timer = setTimeout(() => {
+      setFlashing(false);
+      clearViolation();
+    }, 2000);
+    return () => clearTimeout(timer);
+  }, [lastViolation, clearViolation]);
+
   // Generate altitude ticks
   const ticks = useMemo(() => {
     const items: { y: number; value: number; isMajor: boolean }[] = [];
@@ -277,17 +293,38 @@ export function AltitudeTape({
             />
           )}
 
-          {/* VNAV constraint marker */}
+          {/* VNAV constraint marker — flashes on violation (snap-back) */}
           {constraintY !== null && (
-            <line
-              x1={0}
-              y1={constraintY}
-              x2={BODY_W}
-              y2={constraintY}
-              stroke="#f59e0b"
-              strokeWidth="2"
-              strokeDasharray="5,5"
-            />
+            <g>
+              <line
+                x1={0}
+                y1={constraintY}
+                x2={BODY_W}
+                y2={constraintY}
+                stroke={flashing ? '#fbbf24' : '#f59e0b'}
+                strokeWidth={flashing ? 3 : 2}
+                strokeDasharray="5,5"
+                opacity={flashing ? 1 : 0.8}
+              >
+                {flashing && (
+                  <animate attributeName="opacity" values="1;0.4;1" dur="0.5s" repeatCount="4" />
+                )}
+              </line>
+              {/* FLOOR label — visible during violation flash */}
+              {flashing && (
+                <text
+                  x={BODY_W - 8}
+                  y={constraintY - 6}
+                  fill="#fbbf24"
+                  fontSize="12"
+                  fontFamily={PFD.FONT_GRADUATE}
+                  textAnchor="end"
+                  fontWeight="bold"
+                >
+                  FLOOR
+                </text>
+              )}
+            </g>
           )}
         </g>
 

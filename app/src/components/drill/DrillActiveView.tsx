@@ -1,15 +1,18 @@
 // Active drill view — renders current event, handles interaction
+// Read-only consumer of store state. All progression logic lives in scenario-store.
 
 import { useDrillRunner } from '@/hooks/useDrillRunner';
 import { DrillTimer } from './DrillTimer';
 import { DecisionPrompt } from './DecisionPrompt';
 import { AnthemButton } from '@/components/shared/AnthemButton';
 import { evaluatePredictResponse } from '@/services/pilot-predict';
+import { evaluateCockpitAction } from '@/lib/cockpit-action-utils';
 import { VoicePanel } from '@/components/voice/VoicePanel';
 import { useVoiceStore } from '@/stores/voice-store';
+import { useCockpitStore } from '@/stores/cockpit-store';
+import { useScenarioStore } from '@/stores/scenario-store';
 import { useATCEngine } from '@/hooks/useATCEngine';
-import type { DecisionPointEvent, PredictSuggestionEvent, ATCInstructionEvent, InteractiveCockpitEvent, InteractiveCockpitScore } from '@/types';
-import { InteractiveCockpitView } from '@/components/cockpit/InteractiveCockpitView';
+import type { DecisionPointEvent, PredictSuggestionEvent, ATCInstructionEvent, CockpitActionEvent } from '@/types';
 import { useState, useEffect, useRef } from 'react';
 
 export function DrillActiveView() {
@@ -28,6 +31,10 @@ export function DrillActiveView() {
   const { speakATCInstruction } = useATCEngine();
   const [predictHandled, setPredictHandled] = useState(false);
   const atcSpokenRef = useRef<number>(-1);
+
+  // Read store state for display
+  const cockpitVerification = useScenarioStore((s) => s.cockpitVerification);
+  const handleKeyboardReadback = useScenarioStore((s) => s.handleKeyboardReadback);
 
   // Trigger ATC TTS when an atc_instruction event becomes active and LiveKit is connected
   useEffect(() => {
@@ -50,6 +57,9 @@ export function DrillActiveView() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentEvent, currentEventIndex, livekitConnected]);
+
+  // Voice auto-advance is handled entirely by the store's setReadbackReceived().
+  // No useEffect needed here — the store owns the readback → verification → advance flow.
 
   if (!activeDrill || !currentEvent || !startTime) return null;
 
@@ -94,6 +104,48 @@ export function DrillActiveView() {
 
   // ATC Instruction event — voice mode or keyboard fallback
   if (currentEvent.type === 'atc_instruction') {
+    // Pending cockpit verification overlay — read-only display from store
+    if (cockpitVerification?.status === 'pending') {
+      const elapsed = Date.now() - cockpitVerification.startedAt;
+      const remaining = Math.max(0, Math.ceil((cockpitVerification.timeoutMs - elapsed) / 1000));
+      return (
+        <div className="flex-1 flex flex-col">
+          <DrillHUD
+            drill={activeDrill.title}
+            eventIndex={currentEventIndex}
+            totalEvents={totalEvents}
+            startTime={startTime}
+            duration={activeDrill.duration}
+          />
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="max-w-md w-full rounded-lg border border-[var(--anthem-amber)]/30 bg-[var(--anthem-bg-secondary)] p-6">
+              <div className="text-xs text-[var(--anthem-amber)] font-mono uppercase mb-2">
+                Awaiting Cockpit Action
+              </div>
+              <p className="text-sm text-[var(--anthem-text-primary)] mb-4">
+                Perform the required cockpit actions to comply with the ATC instruction.
+              </p>
+              <div className="space-y-2 mb-4">
+                {cockpitVerification.actionResults.map((ar, i) => (
+                  <div key={i} className="flex items-center gap-2 text-xs font-mono">
+                    <span className={ar.met ? 'text-[var(--anthem-green)]' : 'text-[var(--anthem-text-secondary)]'}>
+                      {ar.met ? '✓' : '○'}
+                    </span>
+                    <span className="text-[var(--anthem-text-primary)]">
+                      {ar.action.type}: {ar.action.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="text-xs text-[var(--anthem-text-secondary)]">
+                Time remaining: {remaining}s
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     // When LiveKit is connected, show voice panel alongside the ATC prompt
     if (livekitConnected) {
       return (
@@ -114,16 +166,9 @@ export function DrillActiveView() {
                 <p className="text-sm text-[var(--anthem-text-primary)] mb-4">
                   {currentEvent.prompt}
                 </p>
-                <p className="text-xs text-[var(--anthem-text-secondary)] mb-4">
+                <p className="text-xs text-[var(--anthem-text-secondary)]">
                   Use PTT (spacebar) to respond via voice.
                 </p>
-                <AnthemButton
-                  variant="primary"
-                  className="w-full"
-                  onClick={handleAdvanceOrComplete}
-                >
-                  Continue
-                </AnthemButton>
               </div>
             </div>
           </div>
@@ -133,6 +178,7 @@ export function DrillActiveView() {
     }
 
     // Keyboard fallback when voice is unavailable
+    // Button handlers signal intent — store owns progression logic.
     return (
       <div className="flex-1 flex flex-col">
         <DrillHUD
@@ -157,27 +203,13 @@ export function DrillActiveView() {
               <AnthemButton
                 variant="success"
                 className="flex-1"
-                onClick={() => {
-                  recordResult({
-                    eventType: 'atc_instruction',
-                    success: true,
-                    details: { mode: 'keyboard-fallback' },
-                  });
-                  handleAdvanceOrComplete();
-                }}
+                onClick={() => handleKeyboardReadback(true)}
               >
                 Readback Correct
               </AnthemButton>
               <AnthemButton
                 variant="danger"
-                onClick={() => {
-                  recordResult({
-                    eventType: 'atc_instruction',
-                    success: false,
-                    details: { mode: 'keyboard-fallback' },
-                  });
-                  handleAdvanceOrComplete();
-                }}
+                onClick={() => handleKeyboardReadback(false)}
               >
                 Skip
               </AnthemButton>
@@ -258,21 +290,38 @@ export function DrillActiveView() {
     );
   }
 
-  // Interactive cockpit event — full PFD + MFD view
+  // Interactive cockpit event — handled by AmbientCockpitView
   if (currentEvent.type === 'interactive_cockpit') {
-    const interactiveEvent = currentEvent as InteractiveCockpitEvent;
+    return null;
+  }
+
+  // Cockpit action event — cockpit-aware, auto-detects action via store subscription
+  if (currentEvent.type === 'cockpit_action') {
     return (
-      <InteractiveCockpitView
-        event={interactiveEvent}
-        drill={activeDrill}
+      <CockpitActionView
+        event={currentEvent as CockpitActionEvent}
+        drillTitle={activeDrill.title}
         eventIndex={currentEventIndex}
         totalEvents={totalEvents}
         startTime={startTime}
-        onComplete={(score: InteractiveCockpitScore) => {
+        duration={activeDrill.duration}
+        onComplete={(cockpitVerified) => {
           recordResult({
-            eventType: 'interactive_cockpit',
-            success: score.allConditionsMet,
-            details: score as unknown as Record<string, unknown>,
+            eventType: 'cockpit_action',
+            success: true,
+            details: {
+              cockpitVerified,
+              mode: cockpitVerified ? 'cockpit-verified' : 'keyboard-fallback',
+              action: currentEvent.expectedAction,
+            },
+          });
+          handleAdvanceOrComplete();
+        }}
+        onSkip={() => {
+          recordResult({
+            eventType: 'cockpit_action',
+            success: false,
+            details: { mode: 'keyboard-fallback', timedOut: true },
           });
           handleAdvanceOrComplete();
         }}
@@ -280,64 +329,81 @@ export function DrillActiveView() {
     );
   }
 
-  // Cockpit action event
-  if (currentEvent.type === 'cockpit_action') {
-    return (
-      <div className="flex-1 flex flex-col">
-        <DrillHUD
-          drill={activeDrill.title}
-          eventIndex={currentEventIndex}
-          totalEvents={totalEvents}
-          startTime={startTime}
-          duration={activeDrill.duration}
-        />
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full rounded-lg border border-[var(--anthem-border)] bg-[var(--anthem-bg-secondary)] p-6">
-            <div className="text-xs text-[var(--anthem-green)] font-mono uppercase mb-2">
-              Cockpit Action Required
-            </div>
-            <p className="text-sm text-[var(--anthem-text-primary)] mb-4">
-              {currentEvent.instruction}
-            </p>
-            <p className="text-xs text-[var(--anthem-text-secondary)] mb-4">
-              Expected: {currentEvent.expectedAction.type} → {currentEvent.expectedAction.value}
-            </p>
-            <div className="flex gap-3">
-              <AnthemButton
-                variant="success"
-                className="flex-1"
-                onClick={() => {
-                  recordResult({
-                    eventType: 'cockpit_action',
-                    success: true,
-                    details: { mode: 'keyboard-fallback', action: currentEvent.expectedAction },
-                  });
-                  handleAdvanceOrComplete();
-                }}
-              >
-                Action Complete
-              </AnthemButton>
-              <AnthemButton
-                variant="danger"
-                onClick={() => {
-                  recordResult({
-                    eventType: 'cockpit_action',
-                    success: false,
-                    details: { mode: 'keyboard-fallback', timedOut: true },
-                  });
-                  handleAdvanceOrComplete();
-                }}
-              >
-                Skip
-              </AnthemButton>
-            </div>
+  return null;
+}
+
+// Cockpit-aware action view — subscribes to cockpit store, auto-detects pilot action
+function CockpitActionView({
+  event,
+  drillTitle,
+  eventIndex,
+  totalEvents,
+  startTime,
+  duration,
+  onComplete,
+  onSkip,
+}: {
+  event: CockpitActionEvent;
+  drillTitle: string;
+  eventIndex: number;
+  totalEvents: number;
+  startTime: number;
+  duration: number;
+  onComplete: (cockpitVerified: boolean) => void;
+  onSkip: () => void;
+}) {
+  const baselineRef = useRef(useCockpitStore.getState());
+
+  // Auto-detect when the expected action is performed on the cockpit
+  useEffect(() => {
+    const unsubscribe = useCockpitStore.subscribe((state) => {
+      if (evaluateCockpitAction(event.expectedAction, state, baselineRef.current)) {
+        unsubscribe();
+        onComplete(true);
+      }
+    });
+    return () => unsubscribe();
+  }, [event.expectedAction, onComplete]);
+
+  return (
+    <div className="flex-1 flex flex-col">
+      <DrillHUD
+        drill={drillTitle}
+        eventIndex={eventIndex}
+        totalEvents={totalEvents}
+        startTime={startTime}
+        duration={duration}
+      />
+      <div className="flex-1 flex items-center justify-center p-6">
+        <div className="max-w-md w-full rounded-lg border border-[var(--anthem-green)]/30 bg-[var(--anthem-bg-secondary)] p-6">
+          <div className="text-xs text-[var(--anthem-green)] font-mono uppercase mb-2">
+            Cockpit Action Required
+          </div>
+          <p className="text-sm text-[var(--anthem-text-primary)] mb-4">
+            {event.instruction}
+          </p>
+          <p className="text-xs text-[var(--anthem-text-secondary)] mb-4">
+            Perform the action on the cockpit controls, or use the buttons below.
+          </p>
+          <div className="flex gap-3">
+            <AnthemButton
+              variant="success"
+              className="flex-1"
+              onClick={() => onComplete(false)}
+            >
+              Action Complete
+            </AnthemButton>
+            <AnthemButton
+              variant="danger"
+              onClick={onSkip}
+            >
+              Skip
+            </AnthemButton>
           </div>
         </div>
       </div>
-    );
-  }
-
-  return null;
+    </div>
+  );
 }
 
 // HUD bar showing drill progress

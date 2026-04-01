@@ -77,7 +77,6 @@ export function InteractivePFD() {
         status={status}
         selectedMode={selectedMode}
         vnavConstraint={vnavConstraint}
-        desiredAltitude={desiredAltitude}
         isDescending={isDescending}
       />
     </div>

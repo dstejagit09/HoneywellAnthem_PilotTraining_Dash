@@ -46,6 +46,17 @@ export interface CockpitState {
   autoThrottle?: boolean;
 }
 
+// Hostile UI — constraint violation tracking
+
+export interface ConstraintViolation {
+  type: 'vnav_altitude_floor';
+  requestedValue: number;
+  constraintValue: number;
+  currentValue: number;
+  timestamp: number;
+  message: string;
+}
+
 // Anthem Telemetry Abstraction (Strategic Dimension 1)
 
 export interface AnthemTelemetryEvent {

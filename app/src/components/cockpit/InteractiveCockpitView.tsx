@@ -9,7 +9,6 @@ import { useInteractiveCockpitTracker } from '@/hooks/useInteractiveCockpitTrack
 import { AutopilotControlBar } from './AutopilotControlBar';
 import { InteractivePFD } from './pfd';
 import { InteractiveMFD } from './InteractiveMFD';
-import { ATCCommunicationOverlay } from './ATCCommunicationOverlay';
 import { ResizeHandle } from './ResizeHandle';
 import type { InteractiveCockpitEvent, InteractiveCockpitScore, CockpitMode, DrillDefinition } from '@/types';
 
@@ -29,25 +28,11 @@ export function InteractiveCockpitView({
   const overridesAppliedRef = useRef(false);
   const modeChangeStartRef = useRef<number | null>(null);
 
-  // Apply initial cockpit overrides on mount (once)
+  // Apply initial cockpit overrides on mount (once, bypasses hostile constraints)
   useEffect(() => {
     if (overridesAppliedRef.current) return;
     overridesAppliedRef.current = true;
-
-    const store = useCockpitStore.getState();
-    const o = event.initialCockpitOverrides;
-
-    if (o.altitude !== undefined) store.setAltitude(o.altitude);
-    if (o.heading !== undefined) store.setHeading(o.heading);
-    if (o.speed !== undefined) store.setSpeed(o.speed);
-    if (o.selectedMode !== undefined) store.setMode(o.selectedMode);
-    if (o.desiredAltitude !== undefined) store.setDesiredAltitude(o.desiredAltitude);
-    if (o.vnavConstraint !== undefined) store.setVnavConstraint(o.vnavConstraint);
-    if (o.autopilot !== undefined) store.setAutopilot(o.autopilot);
-    if (o.autoThrottle !== undefined) store.setAutoThrottle(o.autoThrottle);
-    if (o.flightPlan) store.loadFlightPlan(o.flightPlan);
-    if (o.activeFrequency) store.setFrequency(o.activeFrequency, 'active');
-    if (o.standbyFrequency) store.setFrequency(o.standbyFrequency, 'standby');
+    useCockpitStore.getState().applyCockpitOverrides(event.initialCockpitOverrides);
   }, [event.initialCockpitOverrides]);
 
   // Altitude simulation is handled by AmbientCockpitView's useAltitudeSimulation(true)
@@ -120,12 +105,6 @@ export function InteractiveCockpitView({
           width={mfdWidth}
         />
 
-        {/* ATC Communication overlay */}
-        <ATCCommunicationOverlay
-          escalationTriggered={trackerState.escalationTriggered}
-          escalationPrompt={event.escalationPrompt}
-          initialPrompt={event.description}
-        />
       </div>
     </div>
   );

@@ -1,5 +1,7 @@
 // Mode annunciations — mode/status pills, VNAV constraint warning.
+// Hostile UI: flashes rejection warning when constraint violation fires.
 
+import { useCockpitStore } from '@/stores/cockpit-store';
 import type { CockpitMode } from '@/types';
 
 interface ModeAnnunciationsProps {
@@ -7,7 +9,6 @@ interface ModeAnnunciationsProps {
   status: string;
   selectedMode: CockpitMode;
   vnavConstraint: number;
-  desiredAltitude: number;
   isDescending: boolean;
 }
 
@@ -16,8 +17,10 @@ export function ModeAnnunciations({
   status,
   selectedMode,
   vnavConstraint,
-  desiredAltitude,
 }: ModeAnnunciationsProps) {
+  const lastViolation = useCockpitStore((s) => s.lastConstraintViolation);
+  const isVnavConstrained = selectedMode === 'VNAV' && vnavConstraint > 0;
+
   return (
     <>
       {/* Mode annunciations (top center) */}
@@ -52,9 +55,9 @@ export function ModeAnnunciations({
         </div>
       </div>
 
-      {/* VNAV constraint warning */}
-      {selectedMode === 'VNAV' && vnavConstraint > 0 && desiredAltitude < vnavConstraint && (
-        <div className="absolute top-3 left-3 z-20">
+      {/* VNAV constraint warning — shows when constraint active */}
+      {isVnavConstrained && (
+        <div className="absolute top-3 left-3 z-20 flex flex-col gap-1">
           <div className="px-2 py-0.5 rounded border text-xs font-semibold animate-pulse font-graduate"
             style={{
               backgroundColor: 'rgba(245,158,11,0.15)',
@@ -64,6 +67,18 @@ export function ModeAnnunciations({
           >
             VNAV {vnavConstraint.toLocaleString()} FT
           </div>
+          {/* Hostile UI: rejection flash when pilot violates constraint */}
+          {lastViolation && (
+            <div className="px-2 py-0.5 rounded border text-xs font-bold font-graduate animate-pulse"
+              style={{
+                backgroundColor: 'rgba(239,68,68,0.25)',
+                borderColor: 'rgba(239,68,68,0.6)',
+                color: '#fca5a5',
+              }}
+            >
+              VNAV PATH REJECT
+            </div>
+          )}
         </div>
       )}
 

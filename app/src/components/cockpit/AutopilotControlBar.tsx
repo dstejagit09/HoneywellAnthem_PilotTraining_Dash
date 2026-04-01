@@ -22,9 +22,14 @@ export function AutopilotControlBar({ onModeChange }: AutopilotControlBarProps) 
   const desiredAltitude = useCockpitStore((s) => s.desiredAltitude);
   const speed = useCockpitStore((s) => s.speed);
   const activeFrequency = useCockpitStore((s) => s.activeFrequency);
+  const vnavConstraint = useCockpitStore((s) => s.vnavConstraint);
+  const lastViolation = useCockpitStore((s) => s.lastConstraintViolation);
   const setMode = useCockpitStore((s) => s.setMode);
   const setAutopilot = useCockpitStore((s) => s.setAutopilot);
   const setAutoThrottle = useCockpitStore((s) => s.setAutoThrottle);
+
+  const isVnavConstrained = selectedMode === 'VNAV' && vnavConstraint > 0;
+  const hasViolation = lastViolation !== null;
 
   const handleModeClick = (mode: CockpitMode) => {
     setMode(mode);
@@ -77,9 +82,16 @@ export function AutopilotControlBar({ onModeChange }: AutopilotControlBarProps) 
             <button
               key={mode}
               onClick={() => handleModeClick(mode)}
-              className={`${pillBase} ${selectedMode === mode ? activeStyle : inactiveStyle}`}
+              className={`${pillBase} ${selectedMode === mode ? activeStyle : inactiveStyle} relative`}
             >
               {label}
+              {/* Amber constraint dot on VNAV when constraint is active */}
+              {mode === 'VNAV' && isVnavConstrained && selectedMode === 'VNAV' && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full animate-pulse"
+                  style={{ backgroundColor: '#f59e0b' }}
+                />
+              )}
             </button>
           ))}
         </div>
@@ -95,11 +107,20 @@ export function AutopilotControlBar({ onModeChange }: AutopilotControlBarProps) 
           <span className="text-[14px] font-semibold font-graduate tabular-nums" style={{ color: '#67e8f9' }}>{speed}</span>
         </div>
         <div
-          className="h-[34px] flex items-center gap-2 px-3.5"
-          style={{ background: 'rgba(13,115,119,0.2)', border: '1px solid rgba(13,115,119,0.5)', borderRadius: 6 }}
+          className={`h-[34px] flex items-center gap-2 px-3.5 transition-all duration-200 ${hasViolation ? 'animate-pulse' : ''}`}
+          style={{
+            background: hasViolation ? 'rgba(245,158,11,0.25)' : 'rgba(13,115,119,0.2)',
+            border: `1px solid ${hasViolation ? 'rgba(245,158,11,0.7)' : 'rgba(13,115,119,0.5)'}`,
+            borderRadius: 6,
+          }}
         >
           <span className="text-[10px] font-medium text-white/40 font-graduate">ALT</span>
-          <span className="text-[14px] font-semibold font-graduate tabular-nums" style={{ color: '#67e8f9' }}>{desiredAltitude.toLocaleString()}</span>
+          <span
+            className="text-[14px] font-semibold font-graduate tabular-nums transition-colors duration-200"
+            style={{ color: hasViolation ? '#fbbf24' : '#67e8f9' }}
+          >
+            {desiredAltitude.toLocaleString()}
+          </span>
         </div>
       </div>
 

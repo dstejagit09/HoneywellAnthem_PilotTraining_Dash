@@ -1,12 +1,12 @@
 // T5.10 — Full-screen briefing, scenario setup, "Begin Drill" button
 
 import { useScenarioStore } from '@/stores/scenario-store';
+import { useDrillRunner } from '@/hooks/useDrillRunner';
 import { AnthemButton } from '@/components/shared/AnthemButton';
 
 export function DrillBriefing() {
   const drill = useScenarioStore((s) => s.activeDrill);
-  const startDrill = useScenarioStore((s) => s.startDrill);
-  const reset = useScenarioStore((s) => s.reset);
+  const { startDrill: runnerStart, reset } = useDrillRunner();
 
   if (!drill) return null;
 
@@ -71,10 +71,10 @@ export function DrillBriefing() {
         </div>
 
         <div className="flex gap-3">
-          <AnthemButton variant="primary" className="flex-1" onClick={startDrill}>
+          <AnthemButton variant="primary" className="flex-1" onClick={() => runnerStart(drill.id)}>
             Begin Drill
           </AnthemButton>
-          <AnthemButton variant="danger" onClick={reset}>
+          <AnthemButton variant="danger" onClick={() => reset()}>
             Cancel
           </AnthemButton>
         </div>

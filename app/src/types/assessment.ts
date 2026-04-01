@@ -52,6 +52,7 @@ export interface TouchScore {
   timedOut: boolean;
   actionPerformed: string;
   expectedAction: string;
+  cockpitVerified: boolean;
 }
 
 export interface InteractiveCockpitScore {

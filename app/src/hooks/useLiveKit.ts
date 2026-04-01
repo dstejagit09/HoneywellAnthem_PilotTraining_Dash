@@ -165,9 +165,12 @@ export function useLiveKit() {
     if (phase === 'idle' && livekitConnected) {
       console.info('[useLiveKit] Drill idle — disconnecting LiveKit');
       connectAttempted.current = false;
-      void unpublishMicTrack().catch(() => {/* ignore if already disconnected */}).then(() =>
-        disconnect().then(() => setLivekitConnected(false))
-      );
+      void unpublishMicTrack()
+        .catch(() => {/* ignore if already disconnected */})
+        .then(() => disconnect().catch((err) => {
+          console.warn('[useLiveKit] disconnect() threw — forcing cleanup:', err);
+        }))
+        .then(() => setLivekitConnected(false));
     }
   }, [phase, livekitConnected, setLivekitConnected, handleDataMessage]);
 

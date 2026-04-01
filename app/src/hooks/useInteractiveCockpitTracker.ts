@@ -98,7 +98,8 @@ export function useInteractiveCockpitTracker(
 
   // Subscribe to cockpit-store changes
   useEffect(() => {
-    const unsubscribe = useCockpitStore.subscribe((state) => {
+    // Evaluate conditions against a cockpit snapshot and update tracker state
+    const evaluate = (state: ReturnType<typeof useCockpitStore.getState>) => {
       if (completedRef.current) return;
 
       const elapsed = Date.now() - startTimeRef.current;
@@ -149,7 +150,13 @@ export function useInteractiveCockpitTracker(
           allMet,
         };
       });
-    });
+    };
+
+    // Initial evaluation — conditions may already be met from prior events
+    evaluate(useCockpitStore.getState());
+
+    // Subscribe to subsequent changes
+    const unsubscribe = useCockpitStore.subscribe(evaluate);
 
     return () => unsubscribe();
   }, [event.successConditions]);

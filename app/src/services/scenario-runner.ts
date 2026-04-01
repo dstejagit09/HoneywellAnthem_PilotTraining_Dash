@@ -22,30 +22,8 @@ export function startDrill(drillId: string): void {
   const drill = useScenarioStore.getState().activeDrill;
   if (!drill) return;
 
-  // Set cockpit to drill's initial state
-  cockpit.loadFlightPlan(drill.initialState.flightPlan);
-  cockpit.setAltitude(drill.initialState.altitude);
-  cockpit.setHeading(drill.initialState.heading);
-  cockpit.setSpeed(drill.initialState.speed);
-  cockpit.setFrequency(drill.initialState.activeFrequency, 'active');
-  cockpit.setFrequency(drill.initialState.standbyFrequency, 'standby');
-  cockpit.setMode(drill.initialState.selectedMode);
-
-  // Set extended cockpit state fields if provided
-  if (drill.initialState.desiredAltitude !== undefined) {
-    cockpit.setDesiredAltitude(drill.initialState.desiredAltitude);
-  } else {
-    cockpit.setDesiredAltitude(drill.initialState.altitude);
-  }
-  if (drill.initialState.vnavConstraint !== undefined) {
-    cockpit.setVnavConstraint(drill.initialState.vnavConstraint);
-  }
-  if (drill.initialState.autopilot !== undefined) {
-    cockpit.setAutopilot(drill.initialState.autopilot);
-  }
-  if (drill.initialState.autoThrottle !== undefined) {
-    cockpit.setAutoThrottle(drill.initialState.autoThrottle);
-  }
+  // Atomic initial condition — bypasses hostile constraints (authored data is trusted)
+  cockpit.applyCockpitState(drill.initialState);
 
   // Initialize assessment metrics
   assessment.initDrillMetrics(drill.id);
@@ -102,6 +80,7 @@ export function recordEventResult(result: EventResult): void {
         timedOut: (result.details.timedOut as boolean) ?? false,
         actionPerformed: (result.details.actionPerformed as string) ?? '',
         expectedAction: (result.details.expectedAction as string) ?? '',
+        cockpitVerified: (result.details.cockpitVerified as boolean) ?? false,
       };
       assessment.recordTouchScore(touchScore);
       break;
@@ -143,6 +122,9 @@ export function completeDrill(): void {
   const scenario = useScenarioStore.getState();
 
   scenario.completeDrill();
+
+  // Reset cockpit to defaults (clears VNAV constraint alerts, drill state)
+  useCockpitStore.getState().reset();
 
   // Compute final scores, CBTA rollup, and persist
   finalizeDrillAssessment();
