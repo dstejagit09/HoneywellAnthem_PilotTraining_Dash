@@ -41,6 +41,8 @@ export interface CockpitState {
   heading: number;
   speed: number;
   desiredAltitude?: number;
+  desiredSpeed?: number;
+  selectedHeading?: number;
   vnavConstraint?: number;
   autopilot?: boolean;
   autoThrottle?: boolean;

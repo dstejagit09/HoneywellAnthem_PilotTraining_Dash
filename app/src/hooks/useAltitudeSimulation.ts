@@ -1,60 +1,16 @@
-// Altitude simulation hook — animates cockpit-store altitude toward desiredAltitude
-// based on selectedMode. Adapted from prototype's App.tsx simulation logic.
+// Thin lifecycle bridge — delegates to the headless flight-simulation service (AC-5).
+// Keeps the useAltitudeSimulation(active) signature so call sites don't change.
 
-import { useEffect, useRef } from 'react';
-import { useCockpitStore } from '@/stores/cockpit-store';
-
-const TICK_MS = 500;
-const DEFAULT_RATE = 100; // ft per tick — fallback for modes without explicit rates
-const RATES: Record<string, number> = {
-  VNAV: 100,  // ft per tick — slow, constrained by vnavConstraint
-  FLCH: 200,  // ft per tick — fast, ignores constraints
-  VS: 150,    // ft per tick — moderate, ignores constraints
-};
+import { useEffect } from 'react';
+import { startSimulation, stopSimulation } from '@/services/flight-simulation';
 
 export function useAltitudeSimulation(active: boolean) {
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
   useEffect(() => {
-    if (!active) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-      return;
+    if (active) {
+      startSimulation();
+    } else {
+      stopSimulation();
     }
-
-    intervalRef.current = setInterval(() => {
-      const state = useCockpitStore.getState();
-      const { selectedMode, altitude, desiredAltitude, vnavConstraint } = state;
-      const rate = RATES[selectedMode] ?? DEFAULT_RATE;
-
-      if (rate === 0 || altitude === desiredAltitude) return;
-
-      let target = desiredAltitude;
-
-      // VNAV respects the constraint floor — won't descend below it
-      if (selectedMode === 'VNAV' && vnavConstraint > 0) {
-        target = Math.max(vnavConstraint, desiredAltitude);
-      }
-
-      if (altitude === target) return;
-
-      let newAlt: number;
-      if (altitude > target) {
-        newAlt = Math.max(target, altitude - rate);
-      } else {
-        newAlt = Math.min(target, altitude + rate);
-      }
-
-      state.setAltitude(newAlt);
-    }, TICK_MS);
-
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
+    return () => stopSimulation();
   }, [active]);
 }

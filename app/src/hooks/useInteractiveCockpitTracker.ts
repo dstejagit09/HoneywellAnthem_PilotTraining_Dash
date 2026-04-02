@@ -36,6 +36,12 @@ function evaluateCondition(
     case 'speed':
       actual = state.speed;
       break;
+    case 'desiredSpeed':
+      actual = state.desiredSpeed;
+      break;
+    case 'selectedHeading':
+      actual = state.selectedHeading;
+      break;
     case 'activeFrequency':
       actual = state.activeFrequency.value;
       break;

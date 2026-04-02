@@ -6,11 +6,14 @@
 //   V/S area: rounded-left rect x=1–53, y=49–314 with center arrow notch
 //   Ticks: major 21px, minor 13px, at x=146–167 (right side of tape body)
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { PFD } from './pfd-constants';
+import { useBugDrag } from '@/hooks/useBugDrag';
 
 interface SpeedTapeProps {
   speed: number;
+  desiredSpeed?: number;
+  onSetDesiredSpeed?: (spd: number) => void;
 }
 
 // Layout from Figma node 43-533
@@ -48,7 +51,24 @@ const VS_LABELS: { value: number; y: number }[] = [
   { value: -3, y: 307 },
 ];
 
-export function SpeedTape({ speed }: SpeedTapeProps) {
+// Screen-pixel scale factor (viewBox→rendered)
+const SCALE_Y = RENDER_H / VB_H;
+const SCREEN_PX_PER_KNOT = PX_PER_KNOT * SCALE_Y;
+
+export function SpeedTape({ speed, desiredSpeed, onSetDesiredSpeed }: SpeedTapeProps) {
+  const handleSetSpeed = useCallback((v: number) => onSetDesiredSpeed?.(v), [onSetDesiredSpeed]);
+
+  const bugDrag = useBugDrag({
+    axis: 'vertical',
+    pxPerUnit: SCREEN_PX_PER_KNOT,  // screen pixels, not viewBox pixels
+    min: 100,
+    max: 400,
+    step: 5,
+    invert: true,   // dragging up = higher speed
+    currentValue: desiredSpeed ?? speed,
+    onValueChange: handleSetSpeed,
+  });
+
   const ticks = useMemo(() => {
     const items: { y: number; value: number; isMajor: boolean }[] = [];
     const rangeHalf = PFD.SPD_VISIBLE_RANGE / 2;
@@ -128,7 +148,7 @@ export function SpeedTape({ speed }: SpeedTapeProps) {
           </text>
         ))}
 
-        {/* ── Target speed text in top cap ── */}
+        {/* ── Target speed text in top cap (shows desiredSpeed when available) ── */}
         <text
           x={108}
           y={27}
@@ -137,7 +157,7 @@ export function SpeedTape({ speed }: SpeedTapeProps) {
           fontFamily={PFD.FONT_GRADUATE}
           textAnchor="middle"
         >
-          {displaySpeed}
+          {desiredSpeed != null ? Math.round(desiredSpeed) : displaySpeed}
         </text>
 
         {/* ── Speed icon — Figma exact path (cyan notched rect) ── */}
@@ -177,6 +197,27 @@ export function SpeedTape({ speed }: SpeedTapeProps) {
           ))}
         </g>
 
+        {/* ── Desired speed bug — dashed line (clipped to tape area) ── */}
+        {desiredSpeed != null && (() => {
+          const desiredY = CENTER_Y + (speed - desiredSpeed) * PX_PER_KNOT;
+          const visible = desiredY >= SCROLL_TOP - 10 && desiredY <= SCROLL_BOT + 10;
+          if (!visible) return null;
+          const clampedY = Math.max(SCROLL_TOP, Math.min(SCROLL_BOT, desiredY));
+          return (
+            <g clipPath="url(#spd-tape-clip)">
+              <line
+                x1={BODY_X}
+                y1={clampedY}
+                x2={TICK_X}
+                y2={clampedY}
+                stroke={PFD.CYAN}
+                strokeWidth="1.5"
+                strokeDasharray="6 3"
+              />
+            </g>
+          );
+        })()}
+
         {/* ── Speed pointer — clean pentagon, right-pointing arrow ── */}
         <path
           d={`M56,${CENTER_Y - 26} H155 L173,${CENTER_Y} L155,${CENTER_Y + 26} H56 Z`}
@@ -196,6 +237,36 @@ export function SpeedTape({ speed }: SpeedTapeProps) {
         >
           {displaySpeed}
         </text>
+
+        {/* ── Desired speed bug triangle — OUTSIDE clip, ON TOP, left-pointing ── */}
+        {desiredSpeed != null && (() => {
+          const desiredY = CENTER_Y + (speed - desiredSpeed) * PX_PER_KNOT;
+          const visible = desiredY >= SCROLL_TOP - 10 && desiredY <= SCROLL_BOT + 10;
+          if (!visible) return null;
+          const clampedY = Math.max(SCROLL_TOP + 8, Math.min(SCROLL_BOT - 8, desiredY));
+          return (
+            <g>
+              {/* Invisible larger touch target (44px touch area) */}
+              <rect
+                x={TICK_X - 20}
+                y={clampedY - 18}
+                width={24}
+                height={36}
+                fill="transparent"
+                style={{ cursor: 'ns-resize', touchAction: 'none' }}
+                onPointerDown={bugDrag.onPointerDown}
+              />
+              {/* Visible left-pointing triangle on right edge of tape */}
+              <polygon
+                points={`${TICK_X},${clampedY - 8} ${TICK_X},${clampedY + 8} ${TICK_X - 12},${clampedY}`}
+                fill={PFD.CYAN}
+                stroke={PFD.CYAN_LIGHT}
+                strokeWidth="1"
+                pointerEvents="none"
+              />
+            </g>
+          );
+        })()}
       </svg>
     </div>
   );

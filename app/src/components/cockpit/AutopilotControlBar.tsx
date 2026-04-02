@@ -20,7 +20,8 @@ export function AutopilotControlBar({ onModeChange }: AutopilotControlBarProps) 
   const autopilot = useCockpitStore((s) => s.autopilot);
   const autoThrottle = useCockpitStore((s) => s.autoThrottle);
   const desiredAltitude = useCockpitStore((s) => s.desiredAltitude);
-  const speed = useCockpitStore((s) => s.speed);
+  const desiredSpeed = useCockpitStore((s) => s.desiredSpeed);
+  const selectedHeading = useCockpitStore((s) => s.selectedHeading);
   const activeFrequency = useCockpitStore((s) => s.activeFrequency);
   const vnavConstraint = useCockpitStore((s) => s.vnavConstraint);
   const lastViolation = useCockpitStore((s) => s.lastConstraintViolation);
@@ -104,7 +105,14 @@ export function AutopilotControlBar({ onModeChange }: AutopilotControlBarProps) 
           style={{ background: 'rgba(13,115,119,0.2)', border: '1px solid rgba(13,115,119,0.5)', borderRadius: 6 }}
         >
           <span className="text-[10px] font-medium text-white/40 font-graduate">SPD</span>
-          <span className="text-[14px] font-semibold font-graduate tabular-nums" style={{ color: '#67e8f9' }}>{speed}</span>
+          <span className="text-[14px] font-semibold font-graduate tabular-nums" style={{ color: '#67e8f9' }}>{Math.round(desiredSpeed)}</span>
+        </div>
+        <div
+          className="h-[34px] flex items-center gap-2 px-3.5"
+          style={{ background: 'rgba(13,115,119,0.2)', border: '1px solid rgba(13,115,119,0.5)', borderRadius: 6 }}
+        >
+          <span className="text-[10px] font-medium text-white/40 font-graduate">HDG</span>
+          <span className="text-[14px] font-semibold font-graduate tabular-nums" style={{ color: '#67e8f9' }}>{String(Math.round(selectedHeading)).padStart(3, '0')}</span>
         </div>
         <div
           className={`h-[34px] flex items-center gap-2 px-3.5 transition-all duration-200 ${hasViolation ? 'animate-pulse' : ''}`}

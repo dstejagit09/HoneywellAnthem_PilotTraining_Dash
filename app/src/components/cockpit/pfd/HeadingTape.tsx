@@ -1,8 +1,13 @@
 // Integrated heading system: horizontal tape + mini circular compass.
 // Tape provides precise readout; compass provides spatial orientation.
 
+import { useCallback } from 'react';
+import { useBugDrag } from '@/hooks/useBugDrag';
+
 interface HeadingTapeProps {
   heading: number;
+  selectedHeading?: number;
+  onSetSelectedHeading?: (hdg: number) => void;
 }
 
 const TAPE_W = 380;
@@ -105,7 +110,20 @@ function MiniCompass({ heading }: { heading: number }) {
 
 // ── Heading Tape ───────────────────────────────────────────────────────────────
 
-export function HeadingTape({ heading }: HeadingTapeProps) {
+export function HeadingTape({ heading, selectedHeading, onSetSelectedHeading }: HeadingTapeProps) {
+  const handleSetHeading = useCallback((v: number) => onSetSelectedHeading?.(v), [onSetSelectedHeading]);
+
+  const bugDrag = useBugDrag({
+    axis: 'horizontal',
+    pxPerUnit: PX_PER_DEG,
+    min: 0,
+    max: 360,
+    step: 1,
+    wrap: true,
+    currentValue: selectedHeading ?? heading,
+    onValueChange: handleSetHeading,
+  });
+
   const hdg = heading;
 
   const minDeg = Math.floor(hdg - HALF_RANGE - 1);
@@ -192,9 +210,9 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
       {/* Tape strip */}
       <svg
         width={TAPE_W}
-        height={TAPE_H}
-        viewBox={`0 0 ${TAPE_W} ${TAPE_H}`}
-        style={{ display: 'block' }}
+        height={selectedHeading != null ? TAPE_H + 14 : TAPE_H}
+        viewBox={`0 0 ${TAPE_W} ${selectedHeading != null ? TAPE_H + 14 : TAPE_H}`}
+        style={{ display: 'block', overflow: 'visible' }}
       >
         {/* Background */}
         <rect x={0} y={0} width={TAPE_W} height={TAPE_H} fill="rgba(0,0,0,0.4)" />
@@ -202,7 +220,7 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
         {/* Baseline */}
         <line x1={0} y1={0} x2={TAPE_W} y2={0} stroke="rgba(255,255,255,0.08)" strokeWidth={0.5} />
 
-        {/* Ticks and labels */}
+        {/* Ticks and labels (pointer-events disabled so bug on top receives events) */}
         {ticks.map(({ x, normalD, angDist, isMajor10, label, isCardinal }) => {
           if (isCardinal) {
             const isNorthCardinal = normalD === 0;
@@ -266,6 +284,56 @@ export function HeadingTape({ heading }: HeadingTapeProps) {
             </g>
           );
         })}
+
+        {/* ── Selected heading bug — rendered AFTER ticks so it's on top for pointer events ── */}
+        {selectedHeading != null && (() => {
+          let diff = selectedHeading - hdg;
+          if (diff > 180) diff -= 360;
+          if (diff < -180) diff += 360;
+          const bugX = TAPE_W / 2 + diff * PX_PER_DEG;
+          const visible = bugX >= -10 && bugX <= TAPE_W + 10;
+          const displayHdgBug = String(Math.round(normalDeg(selectedHeading))).padStart(3, '0');
+          return visible ? (
+            <g>
+              {/* Cyan vertical bug line */}
+              <line
+                x1={bugX} y1={0} x2={bugX} y2={TAPE_H}
+                stroke="#4EFFFC" strokeWidth="2"
+                pointerEvents="none"
+              />
+              {/* Invisible larger touch target (44px wide) */}
+              <rect
+                x={bugX - 18}
+                y={-8}
+                width={36}
+                height={TAPE_H + 16}
+                fill="transparent"
+                style={{ cursor: 'ew-resize', touchAction: 'none' }}
+                onPointerDown={bugDrag.onPointerDown}
+              />
+              {/* Visible down-pointing triangle at top of tape */}
+              <polygon
+                points={`${bugX - 6},0 ${bugX + 6},0 ${bugX},10`}
+                fill="#4EFFFC"
+                stroke="#A6FAF8"
+                strokeWidth="0.5"
+                pointerEvents="none"
+              />
+              {/* Selected heading label below tape */}
+              <text
+                x={bugX} y={TAPE_H + 12}
+                textAnchor="middle"
+                fontFamily={FONT_MONO}
+                fontSize={10}
+                fontWeight={700}
+                fill="#4EFFFC"
+                pointerEvents="none"
+              >
+                {displayHdgBug}
+              </text>
+            </g>
+          ) : null;
+        })()}
       </svg>
 
       {/* Mini compass */}

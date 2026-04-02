@@ -15,6 +15,8 @@ interface CockpitStore {
   heading: number;
   speed: number;
   desiredAltitude: number;
+  desiredSpeed: number;
+  selectedHeading: number;
   vnavConstraint: number;
   autopilot: boolean;
   autoThrottle: boolean;
@@ -33,6 +35,10 @@ interface CockpitStore {
   setSpeed: (spd: number) => void;
   requestAltitudeChange: (alt: number) => void;
   adjustDesiredAltitude: (direction: 'up' | 'down', step?: number) => void;
+  setDesiredSpeed: (spd: number) => void;
+  adjustDesiredSpeed: (direction: 'up' | 'down', step?: number) => void;
+  setSelectedHeading: (hdg: number) => void;
+  adjustSelectedHeading: (direction: 'left' | 'right', step?: number) => void;
   setVnavConstraint: (alt: number) => void;
   setAutopilot: (on: boolean) => void;
   setAutoThrottle: (on: boolean) => void;
@@ -59,6 +65,8 @@ const defaultState = {
   heading: 360,
   speed: 280,
   desiredAltitude: 36000,
+  desiredSpeed: 280,
+  selectedHeading: 360,
   vnavConstraint: 0,
   autopilot: true,
   autoThrottle: true,
@@ -147,6 +155,22 @@ export const useCockpitStore = create<CockpitStore>((set) => ({
       return { desiredAltitude: proposed, lastConstraintViolation: null };
     }),
 
+  setDesiredSpeed: (spd) => set({ desiredSpeed: Math.max(0, Math.min(500, spd)) }),
+
+  adjustDesiredSpeed: (direction, step = 5) =>
+    set((state) => {
+      const change = direction === 'up' ? step : -step;
+      return { desiredSpeed: Math.max(0, Math.min(500, state.desiredSpeed + change)) };
+    }),
+
+  setSelectedHeading: (hdg) => set({ selectedHeading: ((hdg % 360) + 360) % 360 }),
+
+  adjustSelectedHeading: (direction, step = 1) =>
+    set((state) => {
+      const change = direction === 'right' ? step : -step;
+      return { selectedHeading: ((state.selectedHeading + change) % 360 + 360) % 360 };
+    }),
+
   setVnavConstraint: (alt) => set({ vnavConstraint: alt }),
 
   setAutopilot: (on) => set({ autopilot: on }),
@@ -172,6 +196,8 @@ export const useCockpitStore = create<CockpitStore>((set) => ({
       heading: cs.heading,
       speed: cs.speed,
       desiredAltitude: cs.desiredAltitude ?? cs.altitude,
+      desiredSpeed: cs.desiredSpeed ?? cs.speed,
+      selectedHeading: cs.selectedHeading ?? cs.heading,
       vnavConstraint: cs.vnavConstraint ?? 0,
       autopilot: cs.autopilot ?? true,
       autoThrottle: cs.autoThrottle ?? true,

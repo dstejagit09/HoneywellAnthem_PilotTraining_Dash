@@ -28,9 +28,13 @@ export function InteractivePFD() {
   const desiredAltitude = useCockpitStore((s) => s.desiredAltitude);
   const speed = useCockpitStore((s) => s.speed);
   const heading = useCockpitStore((s) => s.heading);
+  const desiredSpeed = useCockpitStore((s) => s.desiredSpeed);
+  const selectedHeading = useCockpitStore((s) => s.selectedHeading);
   const selectedMode = useCockpitStore((s) => s.selectedMode);
   const vnavConstraint = useCockpitStore((s) => s.vnavConstraint);
   const adjustDesiredAltitude = useCockpitStore((s) => s.adjustDesiredAltitude);
+  const setDesiredSpeed = useCockpitStore((s) => s.setDesiredSpeed);
+  const setSelectedHeading = useCockpitStore((s) => s.setSelectedHeading);
 
   // Derived values
   const altitudeDelta = currentAltitude - desiredAltitude;
@@ -62,8 +66,8 @@ export function InteractivePFD() {
       <FlightDirector isDescending={isDescending} />
 
       {/* z-20: Instruments */}
-      <HeadingTape heading={headingValue} />
-      <SpeedTape speed={speed} />
+      <HeadingTape heading={headingValue} selectedHeading={selectedHeading} onSetSelectedHeading={setSelectedHeading} />
+      <SpeedTape speed={speed} desiredSpeed={desiredSpeed} onSetDesiredSpeed={setDesiredSpeed} />
       <AltitudeTape
         currentAltitude={currentAltitude}
         desiredAltitude={desiredAltitude}

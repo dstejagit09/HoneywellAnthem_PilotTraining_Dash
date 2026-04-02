@@ -44,7 +44,7 @@ export interface CockpitActionEvent {
 }
 
 export interface CockpitSuccessCondition {
-  field: 'selectedMode' | 'desiredAltitude' | 'altitude' | 'heading' | 'speed' | 'activeFrequency';
+  field: 'selectedMode' | 'desiredAltitude' | 'desiredSpeed' | 'selectedHeading' | 'altitude' | 'heading' | 'speed' | 'activeFrequency';
   operator: 'eq' | 'lte' | 'gte' | 'neq' | 'in';
   value: number | string | string[];
   label: string;
