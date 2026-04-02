@@ -3,7 +3,7 @@
 // store-to-store logic. React components are read-only consumers.
 
 import { create } from 'zustand';
-import type { DrillDefinition, DrillPhase, EventResult, CockpitAction, ATCInstructionEvent } from '@/types';
+import type { DrillDefinition, DrillPhase, EventResult, CockpitAction, ATCInstructionEvent, ScoringBasis } from '@/types';
 import { evaluateAllCockpitActions, type CockpitSnapshot } from '@/lib/cockpit-action-utils';
 import { useCockpitStore } from '@/stores/cockpit-store';
 
@@ -55,6 +55,7 @@ interface ScenarioStore {
   eventResults: EventResult[];
   startTime: number | null;
   readbackReceived: boolean;
+  lastReadbackScoringBasis: ScoringBasis | null;
   cockpitVerification: CockpitVerificationState | null;
   eventTimers: EventTimersState | null;
 
@@ -63,7 +64,7 @@ interface ScenarioStore {
   startDrill: () => void;
   advanceEvent: () => void;
   recordEventResult: (result: EventResult) => void;
-  setReadbackReceived: (received: boolean) => void;
+  setReadbackReceived: (received: boolean, scoringBasis?: ScoringBasis) => void;
   handleKeyboardReadback: (success: boolean) => void;
   completeDrill: () => void;
   reset: () => void;
@@ -95,6 +96,7 @@ const defaultState = {
   eventResults: [] as EventResult[],
   startTime: null as number | null,
   readbackReceived: false,
+  lastReadbackScoringBasis: null as ScoringBasis | null,
   cockpitVerification: null as CockpitVerificationState | null,
   eventTimers: null as EventTimersState | null,
 };
@@ -120,6 +122,7 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
       eventResults: [],
       startTime: Date.now(),
       readbackReceived: false,
+      lastReadbackScoringBasis: null,
       cockpitVerification: null,
       eventTimers: null,
     });
@@ -158,8 +161,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
   // the entire post-readback flow: ack delay → verification or advance.
   // No React component drives this logic.
   // ---------------------------------------------------------------------------
-  setReadbackReceived: (received) => {
-    set({ readbackReceived: received });
+  setReadbackReceived: (received, scoringBasis) => {
+    set({ readbackReceived: received, lastReadbackScoringBasis: scoringBasis ?? null });
     if (!received) return;
 
     // Clear any stale ack timer
@@ -182,14 +185,18 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
 
       set({ readbackReceived: false });
 
+      // Determine event success from readback quality:
+      // 'abstained' = STT too poor to score → not a pass
+      const readbackSuccess = scoringBasis !== 'abstained';
+
       if (hasExpectedActions) {
         // Record readback result (voice mode only — cockpit telemetry recorded by store)
         set((s) => ({
           eventResults: [...s.eventResults, {
             eventIndex: s.currentEventIndex,
             eventType: 'atc_instruction' as const,
-            success: true,
-            details: { mode: 'voice' },
+            success: readbackSuccess,
+            details: { mode: 'voice', scoringBasis },
             timestamp: Date.now(),
           }],
         }));
@@ -202,8 +209,8 @@ export const useScenarioStore = create<ScenarioStore>((set, get) => ({
           eventResults: [...prev.eventResults, {
             eventIndex: s.currentEventIndex,
             eventType: 'atc_instruction' as const,
-            success: true,
-            details: { mode: 'voice' },
+            success: readbackSuccess,
+            details: { mode: 'voice', scoringBasis },
             timestamp: Date.now(),
           }],
         }));
@@ -499,16 +506,21 @@ function _advanceAfterVerification(
     ? Date.now() - verification.startedAt
     : 0;
 
+  // Determine success from readback quality AND cockpit verification
+  const readbackBasis = state.lastReadbackScoringBasis;
+  const readbackPassed = readbackBasis !== 'abstained';
+
   // Build enriched EventResult with cockpit telemetry
   const result: EventResult = {
     eventIndex: state.currentEventIndex,
     eventType: 'atc_instruction',
-    success: true,
+    success: readbackPassed && verified,
     details: {
       cockpitVerified: verified,
       actionResults: verification.actionResults,
       cockpitSnapshot: verification.cockpitSnapshot,
       complianceTimeMs,
+      scoringBasis: readbackBasis,
     },
     timestamp: Date.now(),
   };

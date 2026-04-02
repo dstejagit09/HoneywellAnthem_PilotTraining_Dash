@@ -80,25 +80,27 @@ export function useATCEngine() {
         return null;
       }
 
-      // Mark ATC as speaking with safety timeout
+      // Mark ATC as speaking
       setATCSpeaking(true);
       console.info('[useATCEngine] ATC speaking = true, starting generation');
-      const timeoutId = setTimeout(() => {
-        if (useVoiceStore.getState().isATCSpeaking) {
-          console.warn('[useATCEngine] ATC speaking timeout (30s) — force resetting');
-          setATCSpeaking(false);
-        }
-      }, 30_000);
 
       // Generate and speak
       const instruction = await generateAndSpeakATCInstruction(context);
 
       if (!instruction) {
         console.warn('[useATCEngine] generateAndSpeakATCInstruction returned null');
-        clearTimeout(timeoutId);
         setATCSpeaking(false);
         return null;
       }
+
+      // Safety timeout starts AFTER instruction is sent to agent (not before generation).
+      // This gives the agent the full 30s for TTS playback + ATC_SPEAK_END delivery.
+      setTimeout(() => {
+        if (useVoiceStore.getState().isATCSpeaking) {
+          console.warn('[useATCEngine] ATC speaking timeout (30s) — force resetting');
+          setATCSpeaking(false);
+        }
+      }, 30_000);
 
       console.info('[useATCEngine] ATC instruction sent to agent — text: "%s"',
         instruction.instruction.slice(0, 80));

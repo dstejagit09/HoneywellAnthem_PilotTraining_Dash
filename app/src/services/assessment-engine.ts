@@ -133,11 +133,12 @@ export function processAssessmentResult(payload: AgentAssessmentPayload): void {
     };
     assessment.recordReadbackScore(readback);
 
-    // Signal readback completion for auto-advance during ATC instruction events
+    // Signal readback completion for auto-advance during ATC instruction events.
+    // Pass scoringBasis so the scenario store can determine event success.
     const scenario = useScenarioStore.getState();
     const currentEvent = scenario.activeDrill?.events[scenario.currentEventIndex];
     if (currentEvent?.type === 'atc_instruction') {
-      scenario.setReadbackReceived(true);
+      scenario.setReadbackReceived(true, readback.scoringBasis);
     }
   }
 }

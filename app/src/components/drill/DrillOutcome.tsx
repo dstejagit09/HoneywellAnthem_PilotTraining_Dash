@@ -23,7 +23,7 @@ export function DrillOutcome() {
   if (!drill) return null;
 
   const totalEvents = drill.events.length;
-  const successCount = eventResults.filter((r) => r.success).length;
+  const successCount = eventResults.filter((r) => r.success && r.details?.scoringBasis !== 'abstained').length;
   const elapsedSec = startTime ? Math.floor((Date.now() - startTime) / 1000) : 0;
   const minutes = Math.floor(elapsedSec / 60);
   const seconds = elapsedSec % 60;
@@ -300,14 +300,22 @@ export function DrillOutcome() {
                     {detailElement}
                     <span
                       className={`text-xs font-mono ${
-                        result?.success
-                          ? 'text-anthem-green'
-                          : result
-                            ? 'text-anthem-red'
-                            : 'text-anthem-text-secondary'
+                        result?.details?.scoringBasis === 'abstained'
+                          ? 'text-anthem-amber'
+                          : result?.success
+                            ? 'text-anthem-green'
+                            : result
+                              ? 'text-anthem-red'
+                              : 'text-anthem-text-secondary'
                       }`}
                     >
-                      {result?.success ? 'PASS' : result ? 'FAIL' : 'SKIP'}
+                      {result?.details?.scoringBasis === 'abstained'
+                        ? 'REVIEW'
+                        : result?.success
+                          ? 'PASS'
+                          : result
+                            ? 'FAIL'
+                            : 'SKIP'}
                     </span>
                   </div>
                 </div>
