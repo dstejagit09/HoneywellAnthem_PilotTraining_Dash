@@ -175,8 +175,14 @@ export function InteractiveMFD({
           </div>
         </div>
 
-        {/* Map tab: relative+overflow-hidden so absolute children fill the panel */}
-        <div className={`flex-1 relative bg-[#0f1923] ${activeTab !== 'map' ? 'overflow-auto p-4' : 'overflow-hidden'}`}>
+        {/* Tab content — ATC radios uses overflow-hidden + flex to pin PTT at bottom */}
+        <div className={`flex-1 relative bg-[#0f1923] ${
+          activeTab === 'map'
+            ? 'overflow-hidden'
+            : (activeTab === 'radios' && (phase === 'active' || phase === 'decision') && currentEvent?.type === 'atc_instruction')
+              ? 'overflow-hidden p-4 flex flex-col'
+              : 'overflow-auto p-4'
+        }`}>
           {activeTab === 'home' && <HomeTab />}
           {activeTab === 'radios' && (
             <RadiosTab
@@ -884,7 +890,7 @@ function RadiosTab({
           </div>
 
           {/* Transcript area */}
-          <div className="flex-1 min-h-[120px]">
+          <div className="flex-1 min-h-[120px] overflow-hidden">
             <TranscriptDisplay />
           </div>
 

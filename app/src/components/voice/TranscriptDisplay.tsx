@@ -83,7 +83,7 @@ export function TranscriptDisplay() {
   return (
     <div
       ref={scrollRef}
-      className="flex-1 overflow-y-auto border border-anthem-border rounded bg-anthem-bg-primary"
+      className="h-full overflow-y-auto border border-anthem-border rounded bg-anthem-bg-primary"
     >
       {transcriptHistory.length === 0 && !interimTranscript ? (
         <div className="flex items-center justify-center h-full">
