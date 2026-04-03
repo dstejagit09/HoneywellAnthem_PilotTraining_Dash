@@ -11,6 +11,12 @@ dist/
 .env.local
 .env.*.local
 
+# Secrets / keys
+*.pem
+
+# Log files
+*.log
+
 # OS files
 .DS_Store
 Thumbs.db

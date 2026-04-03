@@ -1,0 +1,9 @@
+.git
+app
+node_modules
+docs
+brain_StormDocuments
+*.md
+*.log
+__pycache__
+.env

@@ -5,7 +5,7 @@
 | Component | Technology | Deployment Target |
 |-----------|-----------|-------------------|
 | Frontend SPA | Vite + React + TypeScript | **Vercel** (free tier) |
-| Python Agent | LiveKit Agents SDK + worker | **Render** (Background Worker) |
+| Python Agent | LiveKit Agents SDK + worker | **AWS EC2** (t3.small, Docker) |
 | Backend | Supabase (DB, Edge Functions) | **Already deployed** |
 | External APIs | OpenAI, Deepgram, ElevenLabs, Google Maps | API keys in env vars |
 
@@ -37,11 +37,11 @@
 
 ---
 
-## Step 2: Python Agent — Render
+## Step 2: Python Agent — AWS EC2
 
 ### Dockerfile
 
-Create `Dockerfile` at repo root:
+Already created at repo root (`Dockerfile`):
 
 ```dockerfile
 FROM python:3.12-slim
@@ -56,29 +56,64 @@ CMD ["python", "-m", "agent.worker", "start"]
 Key details:
 - `libsndfile1` is required by the `soundfile` Python package (voice pipeline dependency)
 - `agent/__init__.py` exists, so `python -m agent.worker` works as a module invocation
-- Dependencies: `livekit-agents`, `livekit-plugins-openai`, `livekit-plugins-deepgram`, `livekit-plugins-elevenlabs`, `livekit-plugins-silero`, `soundfile`
+- `.dockerignore` excludes `app/`, `.git/`, docs, logs from the build context
 
-### Render Setup
+### EC2 Instance Setup
 
-1. Create a new **Background Worker** service (not Web Service — the agent is a persistent process, not HTTP)
-2. Connect GitHub repo
-3. Set root directory to `/` (Dockerfile is at repo root)
-4. Render auto-detects the Dockerfile
+1. **Launch EC2 instance** (AWS Console → EC2 → Launch Instance)
+   - AMI: **Amazon Linux 2023**
+   - Instance type: **t3.small** (2 GB RAM, 2 vCPU burstable)
+   - Key pair: create or select existing
+   - Security group: **SSH only (port 22)** from your IP — no other inbound ports needed (agent connects outward to LiveKit)
+   - Storage: **20 GB gp3** (default 8 GB is tight after Docker images)
 
-### Environment Variables (Render Dashboard)
+2. **SSH into instance**
+   ```bash
+   ssh -i your-key.pem ec2-user@<public-ip>
+   ```
 
-| Variable | Source |
-|----------|--------|
-| `LIVEKIT_URL` | LiveKit Cloud project URL |
-| `LIVEKIT_API_KEY` | LiveKit Cloud project settings |
-| `LIVEKIT_API_SECRET` | LiveKit Cloud project settings |
-| `OPENAI_API_KEY` | OpenAI platform |
-| `DEEPGRAM_API_KEY` | Deepgram console |
-| `ELEVEN_API_KEY` | ElevenLabs dashboard |
+3. **Create `~/.env`** on the instance with agent secrets:
+   ```
+   LIVEKIT_URL=wss://your-project.livekit.cloud
+   LIVEKIT_API_KEY=...
+   LIVEKIT_API_SECRET=...
+   OPENAI_API_KEY=...
+   DEEPGRAM_API_KEY=...
+   ELEVEN_API_KEY=...
+   ```
 
-### Render Tier Note
+4. **Run the setup script** (or run commands from `deploy/ec2-setup.sh` manually):
+   ```bash
+   # Option A: Run script directly from repo after cloning
+   git clone https://github.com/pranjalashutosh/HoneywellAnthem_PilotTraining_Sol.git ~/hpt-agent
+   bash ~/hpt-agent/deploy/ec2-setup.sh
 
-Render's free tier spins down after 15 min of inactivity. The LiveKit agent must stay connected to the LiveKit server to handle incoming room connections. Use the **Starter plan** (~$7/mo) for always-on operation.
+   # Option B: Manual steps
+   sudo dnf update -y && sudo dnf install -y docker git
+   sudo systemctl enable --now docker
+   sudo usermod -aG docker ec2-user
+   cd ~/hpt-agent && docker build -t hpt-agent .
+   docker run -d --name hpt-agent --restart unless-stopped --env-file ~/.env hpt-agent
+   ```
+
+5. **Verify** — check logs:
+   ```bash
+   docker logs -f hpt-agent
+   ```
+   Should see the agent register with LiveKit and wait for room connections.
+
+### EC2 Cost Note
+
+t3.small costs ~$15/mo on-demand. The user's $100 AWS credits cover ~6 months of operation. The agent must stay running to handle incoming LiveKit room connections.
+
+### Updating the Agent
+
+```bash
+cd ~/hpt-agent && git pull
+docker build -t hpt-agent .
+docker stop hpt-agent && docker rm hpt-agent
+docker run -d --name hpt-agent --restart unless-stopped --env-file ~/.env hpt-agent
+```
 
 ---
 
@@ -100,6 +135,8 @@ Ensure these secrets are configured in **Supabase Dashboard → Settings → Edg
 |------|---------|
 | `app/vercel.json` | SPA rewrite rules for client-side routing |
 | `Dockerfile` | Python agent container definition |
+| `.dockerignore` | Exclude non-agent files from Docker build context |
+| `deploy/ec2-setup.sh` | EC2 instance setup script (Docker + agent) |
 
 ---
 
@@ -108,11 +145,11 @@ Ensure these secrets are configured in **Supabase Dashboard → Settings → Edg
 | Service | Tier | Cost |
 |---------|------|------|
 | Vercel | Free (Hobby) | $0/mo |
-| Render | Starter (Background Worker) | ~$7/mo |
+| AWS EC2 | t3.small (on-demand) | ~$15/mo |
 | Supabase | Free | $0/mo |
 | External APIs | Pay-per-use | Variable |
 
-**Total infrastructure: ~$7/month** (or $0 if using Render free tier with spin-down)
+**Total infrastructure: ~$15/month** (covered by $100 AWS credits for ~6 months)
 
 ---
 
@@ -121,7 +158,7 @@ Ensure these secrets are configured in **Supabase Dashboard → Settings → Edg
 1. `cd app && pnpm build` — confirm frontend builds with zero errors
 2. `docker build -t hpt-agent .` — confirm agent Docker image builds locally
 3. Deploy frontend to Vercel → open URL, confirm PFD renders and cockpit controls work
-4. Deploy agent to Render → check Render logs for successful agent startup
+4. Deploy agent to EC2 → check Docker logs for successful agent startup
 5. Start a drill → verify LiveKit room connects (browser ↔ agent)
 6. Verify ATC voice generation (Supabase Edge Function → OpenAI → agent TTS)
 7. Verify STT pipeline (pilot speech → Deepgram → readback scoring)
