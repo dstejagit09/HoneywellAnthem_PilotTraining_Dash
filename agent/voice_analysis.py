@@ -52,6 +52,15 @@ def extract_biomarkers(
         disfluency_count: Disfluency count from STT
         duration_ms: Utterance duration in ms
     """
+    logger.debug("Extracting biomarkers", extra={
+        "metric_type": "biomarker_extraction_start",
+        "audio_samples": int(len(audio)),
+        "sample_rate": int(sample_rate),
+        "word_count": int(word_count),
+        "disfluency_count": int(disfluency_count),
+        "duration_ms": float(duration_ms),
+    })
+
     # Convert to float32 if needed
     if audio.dtype == np.int16:
         audio = audio.astype(np.float32) / 32768.0
@@ -75,6 +84,11 @@ def extract_biomarkers(
     voiced_f0 = _octave_correct(voiced_f0)
 
     if len(voiced_f0) == 0:
+        logger.warning("No voiced frames detected in audio", extra={
+            "metric_type": "biomarker_extraction_warning",
+            "audio_samples": int(len(audio)),
+            "duration_ms": float(duration_ms),
+        })
         voiced_f0 = np.array([0.0])
 
     # RMS intensity
@@ -95,7 +109,7 @@ def extract_biomarkers(
     # Disfluency rate per 100 words
     disfluency_rate = (disfluency_count / max(1, word_count)) * 100.0
 
-    return VoiceBiomarkers(
+    result = VoiceBiomarkers(
         f0_mean=float(np.mean(voiced_f0)),
         f0_peak=float(np.max(voiced_f0)),
         f0_range=float(np.max(voiced_f0) - np.min(voiced_f0)),
@@ -107,6 +121,21 @@ def extract_biomarkers(
         disfluency_rate=disfluency_rate,
         utterance_duration_ms=duration_ms if duration_ms > 0 else duration_sec * 1000,
     )
+
+    logger.info("Biomarkers extraction complete", extra={
+        "metric_type": "biomarker_extraction_result",
+        "f0_mean": float(result.f0_mean),
+        "f0_peak": float(result.f0_peak),
+        "f0_range": float(result.f0_range),
+        "f0_std": float(result.f0_std),
+        "vocal_intensity_rms": float(result.vocal_intensity_rms),
+        "speech_rate_wpm": float(result.speech_rate_wpm),
+        "articulation_rate_wpm": float(result.articulation_rate_wpm),
+        "disfluency_rate": float(result.disfluency_rate),
+        "utterance_duration_ms": float(result.utterance_duration_ms),
+    })
+
+    return result
 
 
 def extract_mfcc(audio: np.ndarray, sample_rate: int = SAMPLE_RATE) -> np.ndarray:
