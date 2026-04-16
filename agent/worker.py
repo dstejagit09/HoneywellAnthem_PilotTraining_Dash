@@ -1038,6 +1038,9 @@ class ATCAgentWorker:
 
 async def entrypoint(ctx: agents.JobContext) -> None:
     """LiveKit agent entrypoint."""
+    # Displace LiveKit's CLI-installed handler with our JsonFormatter so session
+    # logs use our schema (single handler — no duplicate emission to CloudWatch).
+    setup_logging()
     logger.info("Agent entrypoint called for room %s", ctx.room.name)
 
     await ctx.connect()
@@ -1047,8 +1050,6 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
 def main() -> None:
     """Start the LiveKit agent worker."""
-    setup_logging()
-
     agents.cli.run_app(
         agents.WorkerOptions(
             entrypoint_fnc=entrypoint,
