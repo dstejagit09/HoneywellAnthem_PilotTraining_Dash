@@ -20,6 +20,7 @@ from .assessment import (
     compute_latency,
     score_readback,
 )
+from .logging_config import set_log_context, setup_logging
 from .personas import (
     DEFAULT_PERSONA_ID,
     PERSONAS,
@@ -106,9 +107,13 @@ class ATCAgentWorker:
                 meta = json.loads(ctx.room.metadata)
                 pilot_id = meta.get("pilotId", "unknown")
                 self._baseline = CognitiveLoadBaseline(pilot_id=pilot_id)
+                set_log_context(pilot_id=pilot_id, room_name=ctx.room.name)
                 logger.info("[INIT] Pilot ID from room metadata: %s", pilot_id)
             except json.JSONDecodeError:
+                set_log_context(room_name=ctx.room.name)
                 logger.warning("[INIT] Could not parse room metadata")
+        else:
+            set_log_context(room_name=ctx.room.name)
 
         # Pre-publish a persistent ATC audio track so the browser subscribes once
         await self._publish_atc_track()
@@ -910,10 +915,7 @@ async def entrypoint(ctx: agents.JobContext) -> None:
 
 def main() -> None:
     """Start the LiveKit agent worker."""
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(name)s %(levelname)s %(message)s",
-    )
+    setup_logging()
 
     agents.cli.run_app(
         agents.WorkerOptions(
